@@ -1,0 +1,12 @@
+[
+  { "id": "general-physician", "name": "General Physician", "icon": "Stethoscope", "description": "Fevers, infections, and everyday health concerns" },
+  { "id": "dermatologist", "name": "Dermatologist", "icon": "Sparkles", "description": "Skin, hair, and nail care" },
+  { "id": "pediatrician", "name": "Pediatrician", "icon": "Baby", "description": "Child health and growth" },
+  { "id": "gynecologist", "name": "Gynecologist", "icon": "HeartHandshake", "description": "Women's health and pregnancy care" },
+  { "id": "dentist", "name": "Dentist", "icon": "Smile", "description": "Teeth, gums, and oral care" },
+  { "id": "cardiologist", "name": "Cardiologist", "icon": "HeartPulse", "description": "Heart and blood pressure care" },
+  { "id": "orthopedic", "name": "Orthopedic", "icon": "Bone", "description": "Bones, joints, and sports injuries" },
+  { "id": "ent-specialist", "name": "ENT Specialist", "icon": "Ear", "description": "Ear, nose, and throat conditions" },
+  { "id": "psychiatrist", "name": "Psychiatrist", "icon": "Brain", "description": "Mental health and counselling" },
+  { "id": "ophthalmologist", "name": "Ophthalmologist", "icon": "Eye", "description": "Eye care and vision" }
+]

@@ -1,0 +1,12 @@
+[
+  { "id": "r01", "doctorId": "d01", "author": "Kavya S.", "rating": 5, "comment": "Very patient and explained my skin condition clearly. The treatment plan worked within a few weeks.", "date": "2026-08-12" },
+  { "id": "r02", "doctorId": "d01", "author": "Rahul T.", "rating": 5, "comment": "Clinic was clean and the wait time was short. Would recommend to anyone with acne concerns.", "date": "2026-07-28" },
+  { "id": "r03", "doctorId": "d01", "author": "Priyanka M.", "rating": 4, "comment": "Good consultation, though follow-up scheduling took a bit of back and forth.", "date": "2026-06-30" },
+  { "id": "r04", "doctorId": "d02", "author": "Sanjay P.", "rating": 5, "comment": "Extremely thorough. Explained every test result in detail and eased my worries.", "date": "2026-08-20" },
+  { "id": "r05", "doctorId": "d02", "author": "Meenal D.", "rating": 5, "comment": "My father's angioplasty went smoothly under Dr. Mehta's care. Grateful for the attention.", "date": "2026-08-02" },
+  { "id": "r06", "doctorId": "d05", "author": "Anjali R.", "rating": 5, "comment": "She made my pregnancy check-ups stress-free. Always answers questions patiently.", "date": "2026-08-15" },
+  { "id": "r07", "doctorId": "d05", "author": "Divya K.", "rating": 5, "comment": "Best gynecologist I've visited. Highly professional and caring.", "date": "2026-07-10" },
+  { "id": "r08", "doctorId": "d08", "author": "Imran A.", "rating": 4, "comment": "Reliable family doctor. Been seeing him for years for regular check-ups.", "date": "2026-08-05" },
+  { "id": "r09", "doctorId": "d12", "author": "Geeta N.", "rating": 5, "comment": "Senior doctor with immense experience. Diagnosed an issue two other clinics missed.", "date": "2026-08-18" },
+  { "id": "r10", "doctorId": "d07", "author": "Anonymous", "rating": 5, "comment": "Made me feel comfortable discussing difficult topics. Genuinely helpful sessions.", "date": "2026-07-22" }
+]
