@@ -27,6 +27,13 @@ export interface Doctor {
   nextAvailable: string;
   availableDays: string[];
   slots: string[];
+  sessionType?: "individual" | "group";
+  groupSize?: number;
+  slotStart?: string;
+  slotEnd?: string;
+  slotDurationMinutes?: number;
+  scheduleStart?: string;
+  scheduleEnd?: string;
 }
 
 export interface Review {
@@ -74,6 +81,10 @@ export interface Appointment {
   fee: number;
   reason: string;
   createdAt: string;
+  diagnosis?: string;
+  report?: string;
+  medicines?: string;
+  consultedAt?: string;
 }
 
 export interface PatientProfile {

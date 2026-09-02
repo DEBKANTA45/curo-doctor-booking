@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Menu, X, Stethoscope, ChevronDown } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -14,9 +14,21 @@ const navLinks = [
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const { account, logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuOpen]);
 
   const handleLogout = () => {
     logout();
@@ -41,11 +53,10 @@ export default function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className={`text-sm transition-colors ${
-                pathname === link.href
+              className={`text-sm transition-colors ${pathname === link.href
                   ? "text-primary font-medium"
                   : "text-muted hover:text-ink"
-              }`}
+                }`}
             >
               {link.label}
             </Link>
@@ -63,7 +74,7 @@ export default function Navbar() {
           )}
 
           {account ? (
-            <div className="relative">
+            <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen((v) => !v)}
                 className="flex items-center gap-2 rounded-md border border-line px-3 py-2 text-sm text-ink hover:border-primary"
@@ -71,11 +82,11 @@ export default function Navbar() {
                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-light text-xs font-medium text-primary-dark">
                   {account.name.charAt(0).toUpperCase()}
                 </span>
-                {account.name.split(" ")[0]}
+                {account.role === "doctor" ? account.name : account.name.split(" ")[0]}
                 <ChevronDown size={14} />
               </button>
               {menuOpen && (
-              <div className="absolute right-0 mt-2 w-48 rounded-md border border-line bg-surface py-1 shadow-sm">
+                <div className="absolute right-0 mt-2 w-48 rounded-md border border-line bg-surface py-1 shadow-sm">
                   {account.role === "patient" ? (
                     <>
                       <Link
@@ -94,13 +105,22 @@ export default function Navbar() {
                       </Link>
                     </>
                   ) : (
-                    <Link
-                      href="/doctor/dashboard"
-                      className="block px-4 py-2 text-sm text-ink hover:bg-bg"
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      Dashboard
-                    </Link>
+                    <>
+                      <Link
+                        href="/doctor/dashboard"
+                        className="block px-4 py-2 text-sm text-ink hover:bg-bg"
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        Dashboard
+                      </Link>
+                      <Link
+                        href="/doctor/profile"
+                        className="block px-4 py-2 text-sm text-ink hover:bg-bg"
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        My Profile
+                      </Link>
+                    </>
                   )}
                   <button
                     onClick={handleLogout}
@@ -115,7 +135,7 @@ export default function Navbar() {
             <>
               <Link
                 href="/login"
-                className="text-sm text-ink hover:text-info"
+                className="text-sm text-ink hover:text-primary"
               >
                 Log in
               </Link>
@@ -154,7 +174,7 @@ export default function Navbar() {
             <div className="mt-2 h-px bg-line" />
             {account ? (
               <>
-                                <Link
+                <Link
                   href={account.role === "patient" ? "/appointments" : "/doctor/dashboard"}
                   className="text-sm text-ink"
                   onClick={() => setOpen(false)}
@@ -163,6 +183,11 @@ export default function Navbar() {
                 </Link>
                 {account.role === "patient" && (
                   <Link href="/profile" className="text-sm text-ink" onClick={() => setOpen(false)}>
+                    My Profile
+                  </Link>
+                )}
+                {account.role === "doctor" && (
+                  <Link href="/doctor/profile" className="text-sm text-ink" onClick={() => setOpen(false)}>
                     My Profile
                   </Link>
                 )}
@@ -178,7 +203,7 @@ export default function Navbar() {
                 <Link href="/login" className="text-sm text-ink" onClick={() => setOpen(false)}>
                   Log in
                 </Link>
-                <Link href="/register" className="text-sm text-info" onClick={() => setOpen(false)}>
+                <Link href="/register" className="text-sm text-primary" onClick={() => setOpen(false)}>
                   Sign up
                 </Link>
                 <Link href="/doctor/login" className="text-sm text-muted" onClick={() => setOpen(false)}>

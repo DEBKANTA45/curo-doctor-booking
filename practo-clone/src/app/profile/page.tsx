@@ -83,6 +83,7 @@ export default function ProfilePage() {
       emergencyContact: form.emergencyContact?.trim(),
     });
     setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
   };
 
   return (

@@ -15,11 +15,15 @@ const monthLabels = [
 ];
 
 function toIsoDate(d: Date) {
-  return d.toISOString().slice(0, 10);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function formatLong(d: Date) {
+function formatShort(d: Date) {
   return d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
+}
+
+function isSameDay(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
 function describeDate(iso: string) {
@@ -29,52 +33,76 @@ function describeDate(iso: string) {
   const tomorrow = new Date();
   tomorrow.setDate(today.getDate() + 1);
 
-  if (toIsoDate(date) === toIsoDate(today)) return { label: "Today", sublabel: formatLong(date) };
-  if (toIsoDate(date) === toIsoDate(tomorrow)) return { label: "Tomorrow", sublabel: formatLong(date) };
-  return { label: formatLong(date), sublabel: "" };
+  if (isSameDay(date, today)) return { label: "Today", sublabel: formatShort(date) };
+  if (isSameDay(date, tomorrow)) return { label: "Tomorrow", sublabel: formatShort(date) };
+  return { label: formatShort(date), sublabel: "" };
 }
 
-// Today / Tomorrow quick-pick buttons — only shown if the doctor is
-// actually available that weekday.
-function buildQuickDays(availableDays: string[]) {
-  const today = new Date();
-  const tomorrow = new Date();
-  tomorrow.setDate(today.getDate() + 1);
-
-  const out: { key: string; date: string }[] = [];
-  if (availableDays.includes(dayLabels[today.getDay()])) {
-    out.push({ key: "today", date: toIsoDate(today) });
-  }
-  if (availableDays.includes(dayLabels[tomorrow.getDay()])) {
-    out.push({ key: "tomorrow", date: toIsoDate(tomorrow) });
+// Today, Tomorrow, and a few more upcoming days the doctor is actually
+// available — scans forward so the row never comes up short even if the
+// doctor skips a day or two.
+function buildQuickDays(availableDays: string[], minDate: Date, maxDate: Date, count = 4) {
+  const out: string[] = [];
+  const cursor = new Date(minDate);
+  for (let i = 0; i < 90 && out.length < count && cursor <= maxDate; i++) {
+    if (availableDays.includes(dayLabels[cursor.getDay()])) {
+      out.push(toIsoDate(cursor));
+    }
+    cursor.setDate(cursor.getDate() + 1);
   }
   return out;
 }
 
-// All remaining days of the CURRENT month only (no month/year navigation).
-// Past days and weekdays the doctor doesn't work are disabled.
-function buildMonthDays(availableDays: string[]) {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth();
-  const lastDay = new Date(year, month + 1, 0).getDate();
-  const startOfToday = new Date(year, month, today.getDate());
+// Calendar for one month at a time — month is selectable, but only within
+// the CURRENT year (no year navigation). Past days, days beyond the
+// doctor's booking window, and weekdays the doctor doesn't work are disabled.
+function buildMonthDays(monthIndex: number, year: number, availableDays: string[], minDate: Date, maxDate: Date) {
+  const lastDay = new Date(year, monthIndex + 1, 0).getDate();
 
   const days: { day: number; date: string; disabled: boolean }[] = [];
   for (let day = 1; day <= lastDay; day++) {
-    const d = new Date(year, month, day);
-    const isPast = d < startOfToday;
-    const disabled = isPast || !availableDays.includes(dayLabels[d.getDay()]);
+    const d = new Date(year, monthIndex, day);
+    const outOfRange = d < minDate || d > maxDate;
+    const disabled = outOfRange || !availableDays.includes(dayLabels[d.getDay()]);
     days.push({ day, date: toIsoDate(d), disabled });
   }
-  return { days, monthName: monthLabels[month], year, leadingBlanks: new Date(year, month, 1).getDay() };
+  return { days, leadingBlanks: new Date(year, monthIndex, 1).getDay() };
 }
-
 function groupSlots(slots: string[]) {
   return {
     morning: slots.filter((s) => s.endsWith("AM")),
     evening: slots.filter((s) => s.endsWith("PM")),
   };
+}
+
+// A doctor's self-set "open for booking" window (e.g. 2 weeks, 1 month),
+// capped by the current-year restriction on the calendar itself.
+// The doctor's own "open for booking" start/end dates, clamped so it never
+// starts before today and never runs past the current year on the calendar.
+function computeBookableRange(
+  scheduleStart: string | undefined,
+  scheduleEnd: string | undefined,
+  currentYear: number
+) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const yearEnd = new Date(currentYear, 11, 31);
+
+  let min = today;
+  if (scheduleStart) {
+    const [y, m, d] = scheduleStart.split("-").map(Number);
+    const start = new Date(y, m - 1, d);
+    if (start > min) min = start;
+  }
+
+  let max = yearEnd;
+  if (scheduleEnd) {
+    const [y, m, d] = scheduleEnd.split("-").map(Number);
+    const end = new Date(y, m - 1, d);
+    if (end < max) max = end;
+  }
+
+  return { min, max };
 }
 
 export default function BookAppointmentPage({
@@ -85,8 +113,17 @@ export default function BookAppointmentPage({
   const { doctor, ready } = useDoctorBySlug(params.slug);
   const { account } = useAuth();
 
-  const quickDays = useMemo(() => (doctor ? buildQuickDays(doctor.availableDays) : []), [doctor]);
-  const month = useMemo(() => (doctor ? buildMonthDays(doctor.availableDays) : null), [doctor]);
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth();
+
+  const { min: minBookableDate, max: maxBookableDate } = useMemo(
+    () => computeBookableRange(doctor?.scheduleStart, doctor?.scheduleEnd, currentYear),
+    [doctor, currentYear]
+  );
+  const quickDays = useMemo(
+    () => (doctor ? buildQuickDays(doctor.availableDays, minBookableDate, maxBookableDate) : []),
+    [doctor, minBookableDate, maxBookableDate]
+  );
   const { morning, evening } = useMemo(
     () => (doctor ? groupSlots(doctor.slots) : { morning: [], evening: [] }),
     [doctor]
@@ -95,9 +132,15 @@ export default function BookAppointmentPage({
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(currentMonth);
   const [reason, setReason] = useState("");
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState("");
+  
+  const month = useMemo(
+    () => (doctor ? buildMonthDays(calendarMonth, currentYear, doctor.availableDays, minBookableDate, maxBookableDate) : null),
+    [doctor, calendarMonth, currentYear, minBookableDate, maxBookableDate]
+  );
 
   if (!doctor) {
     if (!ready) return null;
@@ -203,7 +246,6 @@ export default function BookAppointmentPage({
   const pickDate = (date: string) => {
     setSelectedDate(date);
     setSelectedTime("");
-    setShowCalendar(false);
   };
 
   const renderSlotGroup = (title: string, icon: React.ReactNode, slots: string[]) => {
@@ -218,11 +260,10 @@ export default function BookAppointmentPage({
             <button
               key={slot}
               onClick={() => setSelectedTime(slot)}
-              className={`rounded-md border px-3.5 py-2 text-sm font-tabular transition-colors ${
-                selectedTime === slot
-                  ? "border-primary bg-primary text-white"
-                  : "border-line text-ink hover:border-primary"
-              }`}
+              className={`rounded-md border px-3.5 py-2 text-sm font-tabular transition-colors ${selectedTime === slot
+                ? "border-primary bg-primary text-white"
+                : "border-line text-ink hover:border-primary"
+                }`}
             >
               {slot}
             </button>
@@ -233,6 +274,7 @@ export default function BookAppointmentPage({
   };
 
   const selectedInfo = selectedDate ? describeDate(selectedDate) : null;
+  const selectedIsQuickDay = selectedDate ? quickDays.includes(selectedDate) : false;
 
   return (
     <div className="mx-auto max-w-content px-5 py-8">
@@ -252,20 +294,19 @@ export default function BookAppointmentPage({
           <div className="mt-6">
             <p className="text-sm font-medium text-ink">Choose a day</p>
             <div className="mt-3 flex flex-wrap gap-2">
-              {quickDays.map((qd) => {
-                const info = describeDate(qd.date);
+              {quickDays.map((date) => {
+                const info = describeDate(date);
                 return (
                   <button
-                    key={qd.key}
-                    onClick={() => pickDate(qd.date)}
-                    className={`min-w-[120px] rounded-md border px-4 py-3 text-left transition-colors ${
-                      selectedDate === qd.date
-                        ? "border-primary bg-primary text-white"
-                        : "border-line text-ink hover:border-primary"
-                    }`}
+                    key={date}
+                    onClick={() => pickDate(date)}
+                    className={`min-w-[104px] rounded-md border px-3.5 py-2.5 text-left transition-colors ${selectedDate === date
+                      ? "border-primary bg-primary text-white"
+                      : "border-line text-ink hover:border-primary"
+                      }`}
                   >
                     <span className="block text-sm font-medium">{info.label}</span>
-                    <span className={`block text-xs ${selectedDate === qd.date ? "text-white/70" : "text-faint"}`}>
+                    <span className={`block text-xs ${selectedDate === date ? "text-white/70" : "text-faint"}`}>
                       {info.sublabel}
                     </span>
                   </button>
@@ -274,25 +315,33 @@ export default function BookAppointmentPage({
 
               <button
                 onClick={() => setShowCalendar((v) => !v)}
-                className={`flex min-w-[120px] items-center justify-center gap-1.5 rounded-md border px-4 py-3 text-sm font-medium transition-colors ${
-                  showCalendar || (selectedInfo && !["Today", "Tomorrow"].includes(selectedInfo.label))
-                    ? "border-primary bg-primary text-white"
-                    : "border-line text-ink hover:border-primary"
-                }`}
+                className={`flex min-w-[104px] items-center justify-center gap-1.5 rounded-md border px-3.5 py-2.5 text-sm font-medium transition-colors ${showCalendar || (selectedDate && !selectedIsQuickDay)
+                  ? "border-primary bg-primary text-white"
+                  : "border-line text-ink hover:border-primary"
+                  }`}
               >
                 <CalendarDays size={15} />
-                {selectedInfo && !["Today", "Tomorrow"].includes(selectedInfo.label)
-                  ? selectedInfo.label
-                  : "More dates"}
+                {selectedDate && !selectedIsQuickDay ? selectedInfo?.label : "More dates"}
               </button>
             </div>
 
             {showCalendar && month && (
               <div className="mt-3 max-w-xs rounded-lg border border-line p-4">
-                <p className="text-sm font-medium text-ink">
-                  {month.monthName} {month.year}
-                </p>
-                <p className="mt-0.5 text-xs text-faint">This month only</p>
+                <div className="flex items-center justify-between">
+                  <select
+                    value={calendarMonth}
+                    onChange={(e) => setCalendarMonth(Number(e.target.value))}
+                    className="rounded-md border border-line px-2.5 py-1.5 text-sm font-medium text-ink outline-none focus:border-primary"
+                  >
+                    {monthLabels.map((m, i) => (
+                      <option key={m} value={i}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-sm text-faint">{currentYear}</span>
+                </div>
+
                 <div className="mt-3 grid grid-cols-7 gap-1 text-center text-xs text-faint">
                   {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
                     <span key={i}>{d}</span>
@@ -307,24 +356,29 @@ export default function BookAppointmentPage({
                       key={d.date}
                       disabled={d.disabled}
                       onClick={() => pickDate(d.date)}
-                      className={`aspect-square rounded-md text-sm transition-colors ${
-                        d.disabled
-                          ? "cursor-not-allowed text-faint/60"
-                          : selectedDate === d.date
+                      className={`aspect-square rounded-md text-sm transition-colors ${d.disabled
+                        ? "cursor-not-allowed text-faint/60"
+                        : selectedDate === d.date
                           ? "bg-primary text-white"
                           : "text-ink hover:border hover:border-primary"
-                      }`}
+                        }`}
                     >
                       {d.day}
                     </button>
                   ))}
                 </div>
+                <p className="mt-3 text-center text-xs text-faint">{currentYear} only</p>
               </div>
             )}
           </div>
 
           <div className="mt-2">
             <p className="mt-6 text-sm font-medium text-ink">Choose a time</p>
+            {doctor.sessionType === "group" && (
+              <p className="mt-1 text-xs text-muted">
+                Group session — up to {doctor.groupSize ?? 1} patients per slot
+              </p>
+            )}
             {renderSlotGroup("Morning", <Sun size={13} />, morning)}
             {renderSlotGroup("Evening", <Sunset size={13} />, evening)}
           </div>

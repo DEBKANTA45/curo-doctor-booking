@@ -23,18 +23,18 @@ export default function Footer() {
           <div>
             <h4 className="text-sm font-medium text-ink">For Patients</h4>
             <ul className="mt-3 space-y-2 text-sm text-muted">
-              <li><Link href="/doctors" className="hover:text-info">Find doctors</Link></li>
-              <li><Link href="/register" className="hover:text-info">Create account</Link></li>
-              <li><Link href="/appointments" className="hover:text-info">My appointments</Link></li>
+              <li><Link href="/doctors" className="hover:text-primary">Find doctors</Link></li>
+              <li><Link href="/register" className="hover:text-primary">Create account</Link></li>
+              <li><Link href="/appointments" className="hover:text-primary">My appointments</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="text-sm font-medium text-ink">For Doctors</h4>
             <ul className="mt-3 space-y-2 text-sm text-muted">
-              <li><Link href="/doctor/register" className="hover:text-info">List your practice</Link></li>
-              <li><Link href="/doctor/login" className="hover:text-info">Doctor login</Link></li>
-              <li><Link href="/doctor/dashboard" className="hover:text-info">Dashboard</Link></li>
+              <li><Link href="/doctor/register" className="hover:text-primary">List your practice</Link></li>
+              <li><Link href="/doctor/login" className="hover:text-primary">Doctor login</Link></li>
+              <li><Link href="/doctor/dashboard" className="hover:text-primary">Dashboard</Link></li>
             </ul>
           </div>
 

@@ -24,7 +24,7 @@ export default function DoctorProfilePage({
     return (
       <div className="mx-auto max-w-content px-5 py-16 text-center">
         <p className="text-sm text-muted">This doctor's profile couldn't be found.</p>
-        <Link href="/doctors" className="mt-3 inline-block text-sm text-info">
+        <Link href="/doctors" className="mt-3 inline-block text-sm text-primary">
           Back to doctors
         </Link>
       </div>

@@ -4,22 +4,17 @@ const config: Config = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     extend: {
-           colors: {
-        bg: "#F8FAFC",
+                 colors: {
+        bg: "#FAFAFA",
         surface: "#FFFFFF",
-        ink: "#0F172A",
-        muted: "#64748B",
-        faint: "#94A3B8",
-        line: "#E2E8F0",
+        ink: "#111827",
+        muted: "#6B7280",
+        faint: "#9CA3AF",
+        line: "#E5E7EB",
         primary: {
-          DEFAULT: "#0F766E",
-          dark: "#115E59",
-          light: "#CCFBF1",
-        },
-        info: {
-          DEFAULT: "#2563EB",
-          dark: "#1D4ED8",
-          light: "#DBEAFE",
+          DEFAULT: "#4F46E5",
+          dark: "#4338CA",
+          light: "#EEF2FF",
         },
         accent: {
           DEFAULT: "#DC2626",

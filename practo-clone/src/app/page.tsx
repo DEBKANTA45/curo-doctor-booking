@@ -110,7 +110,7 @@ export default function HomePage() {
             </h2>
             <Link
               href="/doctors"
-              className="flex items-center gap-1 text-sm font-medium text-info hover:text-info-dark"
+              className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-dark"
             >
               View all <ArrowRight size={14} />
             </Link>

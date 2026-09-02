@@ -27,7 +27,7 @@ export default function DoctorCard({ doctor }: { doctor: Doctor }) {
         <div className="flex flex-wrap items-center gap-1.5">
           <Link
             href={`/doctors/${doctor.slug}`}
-            className="font-display text-base font-semibold text-ink hover:text-info"
+            className="font-display text-base font-semibold text-ink hover:text-primary"
           >
             {doctor.name}
           </Link>

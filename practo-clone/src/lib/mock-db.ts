@@ -245,3 +245,27 @@ export function cancelAppointment(id: string) {
   );
   write(APPOINTMENTS_KEY, all);
 }
+
+export function getAppointmentById(id: string): Appointment | undefined {
+  return getAppointments().find((a) => a.id === id);
+}
+
+export function completeAppointment(
+  id: string,
+  data: { diagnosis: string; report: string; medicines: string }
+): Appointment | null {
+  const all = getAppointments();
+  const index = all.findIndex((a) => a.id === id);
+  if (index === -1) return null;
+  const updated: Appointment = {
+    ...all[index],
+    status: "completed",
+    diagnosis: data.diagnosis,
+    report: data.report,
+    medicines: data.medicines,
+    consultedAt: new Date().toISOString(),
+  };
+  all[index] = updated;
+  write(APPOINTMENTS_KEY, all);
+  return updated;
+}
