@@ -230,7 +230,7 @@ export default function DoctorRegisterForm() {
             {points.map((point) => (
               <li key={point} className="flex items-start gap-3 text-sm text-white/85">
                 <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-white" /> */}
-          <ul className="mt-5 space-y-3">
+          <ul className="mt-6 space-y-4">
             {points.map((point) => (
               <li key={point} className="flex items-start gap-2.5 text-sm text-muted">
                 <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-primary" />
