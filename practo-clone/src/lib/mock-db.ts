@@ -228,6 +228,64 @@ export function getAppointmentsForDoctor(doctorName: string): Appointment[] {
   return getAppointments().filter((a) => a.doctorName === doctorName);
 }
 
+export interface DoctorPatientSummary {
+  name: string;
+  email: string;
+  visitCount: number;
+  completedVisitCount: number;
+  lastVisitAt: string;
+}
+
+// Unique patients this doctor has ever had an appointment with, newest activity first.
+export function getPatientsForDoctor(doctorName: string): DoctorPatientSummary[] {
+  const appts = getAppointmentsForDoctor(doctorName);
+  const map = new Map<string, DoctorPatientSummary>();
+
+  for (const a of appts) {
+    const key = a.patientEmail.trim().toLowerCase();
+    const activityAt = a.consultedAt ?? a.date;
+    const existing = map.get(key);
+    if (!existing) {
+      map.set(key, {
+        name: a.patientName,
+        email: a.patientEmail,
+        visitCount: 1,
+        completedVisitCount: a.status === "completed" ? 1 : 0,
+        lastVisitAt: activityAt,
+      });
+    } else {
+      existing.visitCount += 1;
+      if (a.status === "completed") existing.completedVisitCount += 1;
+      if (activityAt > existing.lastVisitAt) existing.lastVisitAt = activityAt;
+    }
+  }
+
+  return Array.from(map.values()).sort((a, b) => b.lastVisitAt.localeCompare(a.lastVisitAt));
+}
+
+export function findPatientForDoctor(
+  doctorName: string,
+  patientEmail: string
+): DoctorPatientSummary | undefined {
+  const target = patientEmail.trim().toLowerCase();
+  return getPatientsForDoctor(doctorName).find((p) => p.email.trim().toLowerCase() === target);
+}
+
+// Completed visits only (i.e. ones with a diagnosis/prescription on record), newest first.
+export function getVisitHistoryForDoctorAndPatient(
+  doctorName: string,
+  patientEmail: string
+): Appointment[] {
+  const target = patientEmail.trim().toLowerCase();
+  return getAppointmentsForDoctor(doctorName)
+    .filter((a) => a.patientEmail.trim().toLowerCase() === target && a.status === "completed")
+    .sort((a, b) => {
+      const aKey = a.consultedAt ?? a.date;
+      const bKey = b.consultedAt ?? b.date;
+      return bKey.localeCompare(aKey);
+    });
+}
+
 export function createAppointment(
   appt: Omit<Appointment, "id" | "createdAt" | "status">
 ): Appointment {

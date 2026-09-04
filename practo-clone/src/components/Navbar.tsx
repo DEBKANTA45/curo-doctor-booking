@@ -19,6 +19,7 @@ const signedInPatientLinks = [
 
 const doctorLinks = [
   { href: "/doctor/dashboard", label: "Dashboard" },
+  { href: "/doctor/patients", label: "Patients Record" },
   { href: "/doctor/schedule", label: "Schedule" },
 ];
 
