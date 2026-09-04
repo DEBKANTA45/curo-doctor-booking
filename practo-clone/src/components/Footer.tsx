@@ -49,8 +49,8 @@ export default function Footer() {
         </div>
 
         <div className="mt-10 flex flex-col gap-2 border-t border-line pt-6 text-xs text-faint sm:flex-row sm:items-center sm:justify-between">
-          <p>&copy; 2026 Curo. All data on this site is for demonstration only.</p>
-          <p>Built with Next.js &middot; Frontend demo, no live backend</p>
+          <p>&copy; 2026 Curo.</p>
+          <p>Built with Next.js  &middot;</p>
         </div>
       </div>
     </footer>
