@@ -26,6 +26,36 @@ h1, h2, h3 {
   font-variant-numeric: tabular-nums;
 }
 
+.chat-typing-dot {
+  width: 0.3125rem;
+  height: 0.3125rem;
+  border-radius: 9999px;
+  background-color: #6b7280;
+  animation: chat-typing-dot 540ms cubic-bezier(0.23, 1, 0.32, 1) infinite;
+}
+
+.chat-typing-dot-delay-one {
+  animation-delay: 75ms;
+}
+
+.chat-typing-dot-delay-two {
+  animation-delay: 150ms;
+}
+
+@keyframes chat-typing-dot {
+  0%,
+  60%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+
+  30% {
+    opacity: 1;
+    transform: translateY(-0.1875rem);
+  }
+}
+
 ::selection {
   background-color: #eef2ff;
   color: #4338ca;
@@ -42,6 +72,12 @@ h1, h2, h3 {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+  }
+
+  .chat-typing-dot {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
   }
 }
 

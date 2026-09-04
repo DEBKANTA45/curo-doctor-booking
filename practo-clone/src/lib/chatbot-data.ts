@@ -11,6 +11,33 @@ export interface ChatReply {
   isEmergency?: boolean;
 }
 
+export interface ChatPrompt {
+  label: string;
+  text: string;
+}
+
+const SUGGESTED_PROMPTS: Record<"guest" | "patient" | "doctor", ChatPrompt[]> = {
+  guest: [
+    { label: "Browse doctors", text: "Help me find the right doctor" },
+    { label: "How booking works", text: "How do I book an appointment?" },
+    { label: "Account options", text: "What account options are available?" },
+  ],
+  patient: [
+    { label: "Find a doctor", text: "Help me find the right doctor" },
+    { label: "Manage appointments", text: "How do I manage my appointments?" },
+    { label: "Update my profile", text: "How do I update my profile?" },
+  ],
+  doctor: [
+    { label: "Today's patients", text: "Show me today's appointments" },
+    { label: "Manage availability", text: "How do I manage my availability?" },
+    { label: "Update practice profile", text: "How do I update my doctor profile?" },
+  ],
+};
+
+export function getSuggestedPrompts(role: "patient" | "doctor" | null): ChatPrompt[] {
+  return SUGGESTED_PROMPTS[role ?? "guest"];
+}
+
 // ---------- Emergency / crisis detection (checked first, always) ----------
 
 const EMERGENCY_KEYWORDS = [
@@ -304,11 +331,24 @@ export function generateReply(rawInput: string, role: "patient" | "doctor" | nul
 
   // 3. Greetings / thanks
   if (containsAny(text, GREETINGS) && text.length < 30) {
+    if (role === "doctor") {
+      return {
+        text: "Hello. I can help you manage your practice on Curo — availability, patient appointments, consultations, and your public profile. What would you like to do?",
+      };
+    }
+    if (role === "patient") {
+      return {
+        text: "Hello. I can help you find the right doctor, book or manage appointments, and update your profile. What would you like to do?",
+      };
+    }
     return {
       text: "Hi! I can help with general medical questions and using the Curo app — like finding the right specialist or booking an appointment. What's on your mind?",
     };
   }
   if (containsAny(text, THANKS)) {
+    if (role === "doctor") {
+      return { text: "You're welcome. I can also help with your schedule, patient appointments, or practice profile." };
+    }
     return { text: "You're welcome! Anything else I can help with — health-related or about using Curo?" };
   }
 
