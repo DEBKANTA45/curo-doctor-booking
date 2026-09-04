@@ -2,24 +2,69 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { CalendarX2, Clock, Stethoscope, Download } from "lucide-react";
+import { CalendarX2, Clock, Stethoscope, Download, Bell, X, Star } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { Appointment } from "@/lib/types";
-import { cancelAppointment, getAppointmentsForPatient } from "@/lib/mock-db";
+import { Appointment, Notification } from "@/lib/types";
+import {
+  cancelAppointment,
+  getAppointmentsForPatient,
+  getNotifications,
+  markAllNotificationsRead,
+  dismissNotification,
+  hasReviewedAppointment,
+  addReview,
+} from "@/lib/mock-db";
 import { downloadPrescription } from "@/lib/utils";
+import StarPicker from "@/components/StarPicker";
 
 type Tab = "upcoming" | "completed" | "cancelled";
 
 export default function AppointmentsPage() {
   const { account, loading } = useAuth();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [tab, setTab] = useState<Tab>("upcoming");
+  const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
+  const [openReviewId, setOpenReviewId] = useState<string | null>(null);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
 
   useEffect(() => {
     if (account?.role === "patient") {
-      setAppointments(getAppointmentsForPatient(account.email));
+      const list = getAppointmentsForPatient(account.email);
+      setAppointments(list);
+      setNotifications(getNotifications(account.email));
+      markAllNotificationsRead(account.email);
+      setReviewedIds(
+        new Set(list.filter((a) => hasReviewedAppointment(a.id)).map((a) => a.id))
+      );
     }
   }, [account]);
+
+  const handleDismissNotification = (id: string) => {
+    dismissNotification(id);
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  };
+
+  const openReviewForm = (id: string) => {
+    setOpenReviewId(openReviewId === id ? null : id);
+    setReviewRating(0);
+    setReviewComment("");
+  };
+
+  const submitReview = (a: Appointment) => {
+    if (!account || reviewRating === 0) return;
+    addReview({
+      doctorId: a.doctorId,
+      author: account.name,
+      rating: reviewRating,
+      comment: reviewComment.trim(),
+      date: new Date().toISOString().slice(0, 10),
+      appointmentId: a.id,
+    });
+    setReviewedIds((prev) => new Set(prev).add(a.id));
+    setOpenReviewId(null);
+  };
 
   const handleCancel = (id: string) => {
     cancelAppointment(id);
@@ -61,12 +106,33 @@ export default function AppointmentsPage() {
 
   return (
     <div className="mx-auto max-w-content px-5 py-10">
-      <h1 className="font-display text-2xl font-semibold text-ink">
+      <h1 className="font-display text-3xl font-semibold tracking-tight text-ink">
         My appointments
       </h1>
       <p className="mt-1 text-sm text-muted">
         Welcome back, {account.name.split(" ")[0]}.
       </p>
+
+      {notifications.length > 0 && (
+        <div className="mt-5 space-y-2">
+          {notifications.slice(0, 5).map((n) => (
+            <div
+              key={n.id}
+              className="flex items-start gap-2.5 rounded-md border border-line bg-primary-light px-4 py-2.5"
+            >
+              <Bell size={15} className="mt-0.5 shrink-0 text-primary-dark" />
+              <p className="flex-1 text-sm text-primary-dark">{n.message}</p>
+              <button
+                onClick={() => handleDismissNotification(n.id)}
+                aria-label="Dismiss"
+                className="shrink-0 text-primary-dark/60 hover:text-primary-dark"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="mt-6 flex items-center gap-1 border-b border-line">
         {tabs.map((t) => (
@@ -158,12 +224,61 @@ export default function AppointmentsPage() {
                       {a.medicines && <p><span className="text-faint">Prescribed:</span> {a.medicines}</p>}
                     </div>
                   )}
-                  <button
-                    onClick={() => downloadPrescription(a)}
-                    className="mt-3 flex items-center gap-1.5 rounded-md border border-line px-3 py-1.5 text-xs font-medium text-ink hover:border-primary"
-                  >
-                    <Download size={13} /> Download prescription
-                  </button>
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <button
+                      onClick={() => downloadPrescription(a)}
+                      className="flex items-center gap-1.5 rounded-md border border-line px-3 py-1.5 text-xs font-medium text-ink hover:border-primary"
+                    >
+                      <Download size={13} /> Download prescription
+                    </button>
+                    {reviewedIds.has(a.id) ? (
+                      <span className="flex items-center gap-1 text-xs text-muted">
+                        <Star size={13} className="fill-primary text-primary" /> You rated this visit
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => openReviewForm(a.id)}
+                        className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
+                          openReviewId === a.id
+                            ? "border-primary bg-primary text-white"
+                            : "border-line text-ink hover:border-primary"
+                        }`}
+                      >
+                        <Star size={13} /> Rate this consultation
+                      </button>
+                    )}
+                  </div>
+
+                  {openReviewId === a.id && (
+                    <div className="mt-3 rounded-md border border-line bg-bg p-4">
+                      <p className="text-xs text-muted">Your rating for {a.doctorName}</p>
+                      <div className="mt-2">
+                        <StarPicker value={reviewRating} onChange={setReviewRating} />
+                      </div>
+                      <textarea
+                        rows={2}
+                        value={reviewComment}
+                        onChange={(e) => setReviewComment(e.target.value)}
+                        placeholder="Share a few words about your visit (optional)"
+                        className="mt-3 w-full rounded-md border border-line px-3 py-2 text-sm text-ink outline-none focus:border-primary"
+                      />
+                      <div className="mt-3 flex items-center gap-3">
+                        <button
+                          onClick={() => submitReview(a)}
+                          disabled={reviewRating === 0}
+                          className="rounded-md bg-primary px-4 py-2 text-xs font-medium text-white hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Submit review
+                        </button>
+                        <button
+                          onClick={() => setOpenReviewId(null)}
+                          className="text-xs text-muted hover:text-ink"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

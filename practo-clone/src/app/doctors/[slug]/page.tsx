@@ -4,9 +4,10 @@ import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { BadgeCheck, Globe2, MapPin, Clock } from "lucide-react";
-import { getReviewsForDoctor } from "@/lib/utils";
+import { getAllReviewsForDoctor, getRatingSummary } from "@/lib/mock-db";
 import { useDoctorBySlug } from "@/lib/hooks";
 import RatingStars from "@/components/RatingStars";
+
 
 export default function DoctorProfilePage({
   params,
@@ -31,7 +32,8 @@ export default function DoctorProfilePage({
     );
   }
 
-  const reviews = getReviewsForDoctor(doctor.id);
+  const reviews = getAllReviewsForDoctor(doctor.id);
+  const { rating, reviewCount } = getRatingSummary(doctor);
 
   return (
     <div className="mx-auto max-w-content px-5 py-8">
@@ -56,11 +58,11 @@ export default function DoctorProfilePage({
               <p className="mt-1 text-sm text-faint">
                 {doctor.experienceYears} years experience
               </p>
-              {doctor.reviewCount > 0 && (
+              {reviewCount > 0 && (
                 <div className="mt-3 flex items-center gap-2">
-                  <RatingStars rating={doctor.rating} />
+                  <RatingStars rating={rating} />
                   <span className="font-tabular text-sm text-muted">
-                    {doctor.rating} ({doctor.reviewCount} reviews)
+                    {rating} ({reviewCount} reviews)
                   </span>
                 </div>
               )}
@@ -90,11 +92,10 @@ export default function DoctorProfilePage({
               {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
                 <span
                   key={day}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium ${
-                    doctor.availableDays.includes(day)
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium ${doctor.availableDays.includes(day)
                       ? "bg-primary-light text-primary-dark"
                       : "bg-bg text-faint line-through"
-                  }`}
+                    }`}
                 >
                   {day}
                 </span>

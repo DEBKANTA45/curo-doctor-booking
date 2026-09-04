@@ -3,10 +3,11 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { CheckCircle2, ChevronLeft, Sun, Sunset, CalendarDays } from "lucide-react";
+import { CheckCircle2, ChevronLeft, Sunrise, Sun, Sunset, CalendarDays, BadgeCheck, MapPin, Globe2 } from "lucide-react";
 import { useDoctorBySlug } from "@/lib/hooks";
 import { useAuth } from "@/context/AuthContext";
-import { createAppointment } from "@/lib/mock-db";
+import { createAppointment, getRatingSummary, getAllReviewsForDoctor } from "@/lib/mock-db";
+import RatingStars from "@/components/RatingStars";
 
 const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const monthLabels = [
@@ -54,8 +55,8 @@ function buildQuickDays(availableDays: string[], minDate: Date, maxDate: Date, c
 }
 
 // Calendar for one month at a time — month is selectable, but only within
-// the CURRENT year (no year navigation). Past days, days beyond the
-// doctor's booking window, and weekdays the doctor doesn't work are disabled.
+// the CURRENT year (no year navigation). Past days and weekdays the doctor
+// doesn't work are disabled.
 function buildMonthDays(monthIndex: number, year: number, availableDays: string[], minDate: Date, maxDate: Date) {
   const lastDay = new Date(year, monthIndex + 1, 0).getDate();
 
@@ -68,15 +69,30 @@ function buildMonthDays(monthIndex: number, year: number, availableDays: string[
   }
   return { days, leadingBlanks: new Date(year, monthIndex, 1).getDay() };
 }
-function groupSlots(slots: string[]) {
-  return {
-    morning: slots.filter((s) => s.endsWith("AM")),
-    evening: slots.filter((s) => s.endsWith("PM")),
-  };
+
+// Parses "10:00 AM" / "02:30 PM" into a 24-hour hour value.
+function parseSlotHour(slot: string): number {
+  const [time, period] = slot.split(" ");
+  const [hourStr] = time.split(":");
+  let hour = parseInt(hourStr, 10) % 12;
+  if (period === "PM") hour += 12;
+  return hour;
 }
 
-// A doctor's self-set "open for booking" window (e.g. 2 weeks, 1 month),
-// capped by the current-year restriction on the calendar itself.
+// Morning: before noon. Afternoon: noon to before 4pm. Evening: 4pm onward.
+// (A plain AM/PM split was lumping 12–4pm into "evening", which read wrong.)
+function groupSlots(slots: string[]) {
+  const morning: string[] = [];
+  const afternoon: string[] = [];
+  const evening: string[] = [];
+  for (const slot of slots) {
+    const hour = parseSlotHour(slot);
+    if (hour < 12) morning.push(slot);
+    else if (hour < 16) afternoon.push(slot);
+    else evening.push(slot);
+  }
+  return { morning, afternoon, evening };
+}
 // The doctor's own "open for booking" start/end dates, clamped so it never
 // starts before today and never runs past the current year on the calendar.
 function computeBookableRange(
@@ -124,8 +140,8 @@ export default function BookAppointmentPage({
     () => (doctor ? buildQuickDays(doctor.availableDays, minBookableDate, maxBookableDate) : []),
     [doctor, minBookableDate, maxBookableDate]
   );
-  const { morning, evening } = useMemo(
-    () => (doctor ? groupSlots(doctor.slots) : { morning: [], evening: [] }),
+  const { morning, afternoon, evening } = useMemo(
+    () => (doctor ? groupSlots(doctor.slots) : { morning: [], afternoon: [], evening: [] }),
     [doctor]
   );
 
@@ -136,7 +152,7 @@ export default function BookAppointmentPage({
   const [reason, setReason] = useState("");
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState("");
-  
+
   const month = useMemo(
     () => (doctor ? buildMonthDays(calendarMonth, currentYear, doctor.availableDays, minBookableDate, maxBookableDate) : null),
     [doctor, calendarMonth, currentYear, minBookableDate, maxBookableDate]
@@ -261,8 +277,8 @@ export default function BookAppointmentPage({
               key={slot}
               onClick={() => setSelectedTime(slot)}
               className={`rounded-md border px-3.5 py-2 text-sm font-tabular transition-colors ${selectedTime === slot
-                ? "border-primary bg-primary text-white"
-                : "border-line text-ink hover:border-primary"
+                  ? "border-primary bg-primary text-white"
+                  : "border-line text-ink hover:border-primary"
                 }`}
             >
               {slot}
@@ -275,7 +291,8 @@ export default function BookAppointmentPage({
 
   const selectedInfo = selectedDate ? describeDate(selectedDate) : null;
   const selectedIsQuickDay = selectedDate ? quickDays.includes(selectedDate) : false;
-
+  const { rating, reviewCount } = getRatingSummary(doctor);
+  const reviews = getAllReviewsForDoctor(doctor.id);
   return (
     <div className="mx-auto max-w-content px-5 py-8">
       <Link
@@ -285,101 +302,183 @@ export default function BookAppointmentPage({
         <ChevronLeft size={16} /> Back to profile
       </Link>
 
-      <div className="mt-4 grid gap-8 lg:grid-cols-[1fr_320px]">
-        <div>
-          <h1 className="font-display text-2xl font-semibold text-ink">
-            Book your appointment
-          </h1>
+      <h1 className="mt-4 font-display text-3xl font-semibold tracking-tight text-ink">
+        Book your appointment
+      </h1>
 
-          <div className="mt-6">
-            <p className="text-sm font-medium text-ink">Choose a day</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {quickDays.map((date) => {
-                const info = describeDate(date);
-                return (
-                  <button
-                    key={date}
-                    onClick={() => pickDate(date)}
-                    className={`min-w-[104px] rounded-md border px-3.5 py-2.5 text-left transition-colors ${selectedDate === date
+        <div className="mt-6 grid items-start gap-8 lg:grid-cols-[1fr_400px]">
+        {/* LEFT — complete doctor information */}
+        <div className="flex flex-col gap-6">
+        <div className="rounded-lg border border-line bg-surface p-6">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+            <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-full border border-line">
+              <Image src={doctor.photo} alt={doctor.name} fill sizes="96px" className="object-cover" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <p className="font-display text-xl font-semibold text-ink">{doctor.name}</p>
+                {doctor.verified && (
+                  <BadgeCheck size={17} className="text-primary" aria-label="Verified doctor" />
+                )}
+              </div>
+              <p className="mt-1 text-sm text-muted">
+                {doctor.specialty} &middot; {doctor.qualifications}
+              </p>
+              <p className="mt-1 text-sm text-faint">{doctor.experienceYears} years experience</p>
+              {reviewCount > 0 && (
+                <div className="mt-2 flex items-center gap-2">
+                  <RatingStars rating={rating} />
+                  <span className="font-tabular text-sm text-muted">
+                    {rating} ({reviewCount})
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-5 space-y-1.5 border-t border-line pt-5 text-sm text-muted">
+            <p className="flex items-center gap-1.5">
+              <MapPin size={15} className="shrink-0" />
+              {doctor.clinicName}{doctor.locality ? `, ${doctor.locality}` : ""}, {doctor.city}
+            </p>
+            <p className="flex items-center gap-1.5">
+              <Globe2 size={15} className="shrink-0" />
+              {doctor.languages.join(", ")}
+            </p>
+          </div>
+
+          {doctor.about && (
+            <div className="mt-5 border-t border-line pt-5">
+              <p className="text-sm font-medium text-ink">About</p>
+              <p className="mt-2 text-sm leading-relaxed text-muted">{doctor.about}</p>
+            </div>
+          )}
+
+          {doctor.sessionType === "group" && (
+            <div className="mt-5 rounded-md border border-line bg-primary-light px-4 py-2.5">
+              <p className="text-sm text-primary-dark">
+                Group session — up to {doctor.groupSize ?? 1} patients per slot
+              </p>
+            </div>
+          )}
+
+          
+
+
+
+
+              </div>
+
+        <div className="rounded-lg border border-line bg-surface p-6">
+          <h2 className="font-display text-lg font-semibold text-ink">
+            Patient reviews ({reviews.length})
+          </h2>
+          {reviews.length > 0 ? (
+            <div className="mt-4 space-y-5">
+              {reviews.map((review) => (
+                <div key={review.id} className="border-b border-line pb-5 last:border-b-0">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-ink">{review.author}</p>
+                    <RatingStars rating={review.rating} size={12} />
+                  </div>
+                  {review.comment && (
+                    <p className="mt-2 text-sm leading-relaxed text-muted">{review.comment}</p>
+                  )}
+                  <p className="mt-1.5 text-xs text-faint">{review.date}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-3 text-sm text-muted">No reviews yet for this doctor.</p>
+          )}
+        </div>
+        </div>
+
+        {/* RIGHT — date, slot, and confirmation */}
+        <div className="rounded-lg border border-line bg-surface p-6 lg:sticky lg:top-24 lg:h-fit">
+          <p className="text-sm font-medium text-ink">Choose a day</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {quickDays.map((date) => {
+              const info = describeDate(date);
+              return (
+                <button
+                  key={date}
+                  onClick={() => pickDate(date)}
+                  className={`min-w-[96px] rounded-md border px-3 py-2 text-left transition-colors ${selectedDate === date
                       ? "border-primary bg-primary text-white"
                       : "border-line text-ink hover:border-primary"
-                      }`}
-                  >
-                    <span className="block text-sm font-medium">{info.label}</span>
-                    <span className={`block text-xs ${selectedDate === date ? "text-white/70" : "text-faint"}`}>
-                      {info.sublabel}
-                    </span>
-                  </button>
-                );
-              })}
+                    }`}
+                >
+                  <span className="block text-sm font-medium">{info.label}</span>
+                  <span className={`block text-xs ${selectedDate === date ? "text-white/70" : "text-faint"}`}>
+                    {info.sublabel}
+                  </span>
+                </button>
+              );
+            })}
 
-              <button
-                onClick={() => setShowCalendar((v) => !v)}
-                className={`flex min-w-[104px] items-center justify-center gap-1.5 rounded-md border px-3.5 py-2.5 text-sm font-medium transition-colors ${showCalendar || (selectedDate && !selectedIsQuickDay)
+            <button
+              onClick={() => setShowCalendar((v) => !v)}
+              className={`flex min-w-[96px] items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${showCalendar || (selectedDate && !selectedIsQuickDay)
                   ? "border-primary bg-primary text-white"
                   : "border-line text-ink hover:border-primary"
-                  }`}
-              >
-                <CalendarDays size={15} />
-                {selectedDate && !selectedIsQuickDay ? selectedInfo?.label : "More dates"}
-              </button>
-            </div>
+                }`}
+            >
+              <CalendarDays size={15} />
+              {selectedDate && !selectedIsQuickDay ? selectedInfo?.label : "More"}
+            </button>
+          </div>
 
-            {showCalendar && month && (
-              <div className="mt-3 max-w-xs rounded-lg border border-line p-4">
-                <div className="flex items-center justify-between">
-                  <select
-                    value={calendarMonth}
-                    onChange={(e) => setCalendarMonth(Number(e.target.value))}
-                    className="rounded-md border border-line px-2.5 py-1.5 text-sm font-medium text-ink outline-none focus:border-primary"
-                  >
-                    {monthLabels.map((m, i) => (
-                      <option key={m} value={i}>
-                        {m}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="text-sm text-faint">{currentYear}</span>
-                </div>
+          {showCalendar && month && (
+            <div className="mt-3 rounded-lg border border-line p-4">
+              <div className="flex items-center justify-between">
+                <select
+                  value={calendarMonth}
+                  onChange={(e) => setCalendarMonth(Number(e.target.value))}
+                  className="rounded-md border border-line px-2.5 py-1.5 text-sm font-medium text-ink outline-none focus:border-primary"
+                >
+                  {monthLabels.map((m, i) => (
+                    <option key={m} value={i}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+                <span className="text-sm text-faint">{currentYear}</span>
+              </div>
 
-                <div className="mt-3 grid grid-cols-7 gap-1 text-center text-xs text-faint">
-                  {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
-                    <span key={i}>{d}</span>
-                  ))}
-                </div>
-                <div className="mt-1 grid grid-cols-7 gap-1">
-                  {Array.from({ length: month.leadingBlanks }).map((_, i) => (
-                    <span key={`blank-${i}`} />
-                  ))}
-                  {month.days.map((d) => (
-                    <button
-                      key={d.date}
-                      disabled={d.disabled}
-                      onClick={() => pickDate(d.date)}
-                      className={`aspect-square rounded-md text-sm transition-colors ${d.disabled
+              <div className="mt-3 grid grid-cols-7 gap-1 text-center text-xs text-faint">
+                {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+                  <span key={i}>{d}</span>
+                ))}
+              </div>
+              <div className="mt-1 grid grid-cols-7 gap-1">
+                {Array.from({ length: month.leadingBlanks }).map((_, i) => (
+                  <span key={`blank-${i}`} />
+                ))}
+                {month.days.map((d) => (
+                  <button
+                    key={d.date}
+                    disabled={d.disabled}
+                    onClick={() => pickDate(d.date)}
+                    className={`aspect-square rounded-md text-sm transition-colors ${d.disabled
                         ? "cursor-not-allowed text-faint/60"
                         : selectedDate === d.date
                           ? "bg-primary text-white"
                           : "text-ink hover:border hover:border-primary"
-                        }`}
-                    >
-                      {d.day}
-                    </button>
-                  ))}
-                </div>
-                <p className="mt-3 text-center text-xs text-faint">{currentYear} only</p>
+                      }`}
+                  >
+                    {d.day}
+                  </button>
+                ))}
               </div>
-            )}
-          </div>
+              <p className="mt-3 text-center text-xs text-faint">{currentYear} only</p>
+            </div>
+          )}
 
-          <div className="mt-2">
-            <p className="mt-6 text-sm font-medium text-ink">Choose a time</p>
-            {doctor.sessionType === "group" && (
-              <p className="mt-1 text-xs text-muted">
-                Group session — up to {doctor.groupSize ?? 1} patients per slot
-              </p>
-            )}
-            {renderSlotGroup("Morning", <Sun size={13} />, morning)}
+          <div className="mt-6">
+            <p className="text-sm font-medium text-ink">Choose a time</p>
+            {renderSlotGroup("Morning", <Sunrise size={13} />, morning)}
+            {renderSlotGroup("Afternoon", <Sun size={13} />, afternoon)}
             {renderSlotGroup("Evening", <Sunset size={13} />, evening)}
           </div>
 
@@ -391,52 +490,39 @@ export default function BookAppointmentPage({
               id="reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              rows={3}
-              placeholder="Briefly describe your symptoms or reason for the visit"
+              rows={2}
+              placeholder="Briefly describe your symptoms"
               className="mt-2 w-full rounded-md border border-line px-3.5 py-2.5 text-sm text-ink outline-none focus:border-primary"
             />
           </div>
 
           {error && <p className="mt-3 text-sm text-accent">{error}</p>}
-        </div>
 
-        <aside className="lg:sticky lg:top-24 lg:h-fit">
-          <div className="rounded-lg border border-line bg-surface p-5">
-            <div className="flex items-center gap-3">
-              <div className="relative h-12 w-12 overflow-hidden rounded-full">
-                <Image src={doctor.photo} alt={doctor.name} fill sizes="48px" className="object-cover" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-ink">{doctor.name}</p>
-                <p className="text-xs text-muted">{doctor.specialty}</p>
-              </div>
+          <div className="mt-6 space-y-2 border-t border-line pt-5 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted">Day</span>
+              <span className="text-ink">{selectedInfo?.label ?? "—"}</span>
             </div>
-            <div className="mt-4 space-y-2 border-t border-line pt-4 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted">Day</span>
-                <span className="text-ink">{selectedInfo?.label ?? "—"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted">Time</span>
-                <span className="font-tabular text-ink">{selectedTime || "—"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted">Consultation fee</span>
-                <span className="font-tabular text-ink">₹{doctor.consultationFee}</span>
-              </div>
+            <div className="flex justify-between">
+              <span className="text-muted">Time</span>
+              <span className="font-tabular text-ink">{selectedTime || "—"}</span>
             </div>
-            <button
-              onClick={handleConfirm}
-              className="mt-5 w-full rounded-md bg-primary px-4 py-3 text-sm font-medium text-white hover:bg-primary-dark"
-            >
-              Confirm appointment
-            </button>
-            <p className="mt-3 text-center text-xs text-faint">
-              Pay ₹{doctor.consultationFee} at the clinic during your visit
-            </p>
+            <div className="flex justify-between">
+              <span className="text-muted">Consultation fee</span>
+              <span className="font-tabular text-ink">₹{doctor.consultationFee}</span>
+            </div>
           </div>
-        </aside>
-      </div>
+          <button
+            onClick={handleConfirm}
+            className="mt-5 w-full rounded-md bg-primary px-4 py-3 text-sm font-medium text-white hover:bg-primary-dark"
+          >
+            Confirm appointment
+          </button>
+          <p className="mt-3 text-center text-xs text-faint">
+            Pay ₹{doctor.consultationFee} at the clinic during your visit
+          </p>
+               </div>
+           </div>
     </div>
   );
 }

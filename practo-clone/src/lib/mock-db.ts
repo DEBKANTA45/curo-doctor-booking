@@ -3,16 +3,20 @@ import {
   Appointment,
   Doctor,
   DoctorAccount,
+  Notification,
   PatientAccount,
   PatientProfile,
+  Review,
 } from "./types";
-import { doctors as seedDoctors } from "./utils";
+import { doctors as seedDoctors, reviews as seedReviews } from "./utils";
 
 const ACCOUNTS_KEY = "curo_accounts";
 const SESSION_KEY = "curo_session";
 const APPOINTMENTS_KEY = "curo_appointments";
 const CUSTOM_DOCTORS_KEY = "curo_custom_doctors";
 const PATIENT_PROFILES_KEY = "curo_patient_profiles";
+const NOTIFICATIONS_KEY = "curo_notifications";
+const CUSTOM_REVIEWS_KEY = "curo_custom_reviews";
 
 function read<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -246,6 +250,24 @@ export function cancelAppointment(id: string) {
   write(APPOINTMENTS_KEY, all);
 }
 
+export function rescheduleAppointment(id: string, newDate: string): Appointment | null {
+  const all = getAppointments();
+  const index = all.findIndex((a) => a.id === id);
+  if (index === -1) return null;
+  const previous = all[index];
+  if (previous.date === newDate) return previous;
+
+  const updated: Appointment = { ...previous, date: newDate };
+  all[index] = updated;
+  write(APPOINTMENTS_KEY, all);
+
+  addNotification(
+    previous.patientEmail,
+    `${previous.doctorName} rescheduled your appointment from ${previous.date} to ${newDate}.`
+  );
+  return updated;
+}
+
 export function getAppointmentById(id: string): Appointment | undefined {
   return getAppointments().find((a) => a.id === id);
 }
@@ -268,4 +290,83 @@ export function completeAppointment(
   all[index] = updated;
   write(APPOINTMENTS_KEY, all);
   return updated;
+}
+
+// ---------- Notifications ----------
+
+export function getNotifications(email: string): Notification[] {
+  const target = email.trim().toLowerCase();
+  return read<Notification[]>(NOTIFICATIONS_KEY, [])
+    .filter((n) => n.email.trim().toLowerCase() === target)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+export function getUnreadNotificationCount(email: string): number {
+  return getNotifications(email).filter((n) => !n.read).length;
+}
+
+export function addNotification(email: string, message: string) {
+  const all = read<Notification[]>(NOTIFICATIONS_KEY, []);
+  all.push({
+    id: `note_${Date.now()}`,
+    email,
+    message,
+    read: false,
+    createdAt: new Date().toISOString(),
+  });
+  write(NOTIFICATIONS_KEY, all);
+}
+
+export function markAllNotificationsRead(email: string) {
+  const target = email.trim().toLowerCase();
+  const all = read<Notification[]>(NOTIFICATIONS_KEY, []);
+  write(
+    NOTIFICATIONS_KEY,
+    all.map((n) => (n.email.trim().toLowerCase() === target ? { ...n, read: true } : n))
+  );
+}
+
+export function dismissNotification(id: string) {
+  const all = read<Notification[]>(NOTIFICATIONS_KEY, []);
+  write(NOTIFICATIONS_KEY, all.filter((n) => n.id !== id));
+}
+
+// ---------- Reviews (seeded + patient-submitted) ----------
+
+export function getCustomReviews(doctorId?: string): Review[] {
+  const all = read<Review[]>(CUSTOM_REVIEWS_KEY, []);
+  return doctorId ? all.filter((r) => r.doctorId === doctorId) : all;
+}
+
+export function hasReviewedAppointment(appointmentId: string): boolean {
+  return getCustomReviews().some((r) => r.appointmentId === appointmentId);
+}
+
+export function addReview(review: Omit<Review, "id">): Review {
+  const full: Review = { ...review, id: `rev_${Date.now()}` };
+  const all = getCustomReviews();
+  all.unshift(full);
+  write(CUSTOM_REVIEWS_KEY, all);
+  return full;
+}
+
+export function getAllReviewsForDoctor(doctorId: string): Review[] {
+  const seeded = seedReviews.filter((r) => r.doctorId === doctorId);
+  const custom = getCustomReviews(doctorId);
+  return [...custom, ...seeded];
+}
+
+// Blends the doctor's baseline rating/review count with any freshly
+// submitted patient reviews, so new reviews move the average without
+// needing full historical review data for the seeded baseline.
+export function getRatingSummary(doctor: Doctor): { rating: number; reviewCount: number } {
+  const custom = getCustomReviews(doctor.id);
+  if (custom.length === 0) return { rating: doctor.rating, reviewCount: doctor.reviewCount };
+
+  const baselineScore = doctor.rating * doctor.reviewCount;
+  const customScore = custom.reduce((sum, r) => sum + r.rating, 0);
+  const totalCount = doctor.reviewCount + custom.length;
+  const rating = totalCount > 0 ? Math.round(((baselineScore + customScore) / totalCount) * 10) / 10 : 0;
+
+  return { rating, reviewCount: totalCount };
 }

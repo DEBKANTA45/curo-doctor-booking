@@ -105,8 +105,8 @@ export default function HomePage() {
       <section className="border-y border-line bg-surface">
         <div className="mx-auto max-w-content px-5 py-12">
           <div className="flex items-end justify-between">
-            <h2 className="font-display text-2xl font-semibold text-ink">
-              Top rated doctors
+            <h2 className="font-display text-2xl font-semibold tracking-tight text-ink">
+              Top rated doctors 
             </h2>
             <Link
               href="/doctors"

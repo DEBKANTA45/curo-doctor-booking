@@ -16,7 +16,7 @@ const points = [
 export default function DoctorLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/doctor/dashboard";
+  const redirect = searchParams.get("redirect") || "/doctor/home";
   const { refresh } = useAuth();
 
   const [email, setEmail] = useState("");

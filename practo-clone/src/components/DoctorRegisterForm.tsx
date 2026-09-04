@@ -51,7 +51,7 @@ export default function DoctorRegisterForm() {
       return;
     }
     refresh();
-    router.push("/doctor/dashboard");
+    router.push("/doctor/home");
   };
 
   return (

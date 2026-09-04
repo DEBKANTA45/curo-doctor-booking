@@ -43,6 +43,7 @@ export interface Review {
   rating: number;
   comment: string;
   date: string;
+  appointmentId?: string;
 }
 
 export type UserRole = "patient" | "doctor";
@@ -97,4 +98,12 @@ export interface PatientProfile {
   medicalHistory?: string;
   currentMedications?: string;
   emergencyContact?: string;
+}
+
+export interface Notification {
+  id: string;
+  email: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
 }

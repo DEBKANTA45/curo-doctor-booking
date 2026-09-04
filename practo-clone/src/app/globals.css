@@ -2,8 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+
 :root {
   color-scheme: light;
+  font-size: 18px;
 }
 
 html {
@@ -13,6 +15,11 @@ html {
 body {
   background-color: #fafafa;
   color: #111827;
+  line-height: 1.6;
+}
+
+h1, h2, h3 {
+  line-height: 1.25;
 }
 
 .font-tabular {
