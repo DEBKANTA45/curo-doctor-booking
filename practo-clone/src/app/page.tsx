@@ -1,9 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, CalendarCheck, ClipboardList, Search } from "lucide-react";
 import HomeSearch from "@/components/HomeSearch";
 import DoctorCard from "@/components/DoctorCard";
 import { doctors, specialties } from "@/lib/utils";
 import { getSpecialtyIcon } from "@/lib/icon-map";
+import { useAuth } from "@/context/AuthContext";
 
 const topDoctors = [...doctors].sort((a, b) => b.rating - a.rating).slice(0, 4);
 
@@ -26,6 +29,10 @@ const steps = [
 ];
 
 export default function HomePage() {
+  const { account } = useAuth();
+  const isDoctor = account?.role === "doctor";
+  const isPatient = account?.role === "patient";
+
   return (
     <div>
       <section className="border-b border-line bg-surface">
@@ -38,6 +45,20 @@ export default function HomePage() {
               Compare doctors by specialty, fee, and patient rating — then
               book an in-clinic visit in a couple of minutes.
             </p>
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <Link
+                href={isDoctor ? "/doctor/dashboard" : "/doctors"}
+                className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-[background-color,transform] duration-150 ease-out hover:bg-primary-dark active:scale-[0.97]"
+              >
+                {isDoctor ? "Open dashboard" : "Find a doctor"} <ArrowRight size={16} />
+              </Link>
+              <Link
+                href={isDoctor ? "/doctor/schedule" : isPatient ? "/appointments" : "/doctor/register"}
+                className="inline-flex items-center rounded-md border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-ink transition-[border-color,background-color,transform] duration-150 ease-out hover:border-primary hover:bg-primary-light active:scale-[0.97]"
+              >
+                {isDoctor ? "Manage schedule" : isPatient ? "My appointments" : "List your practice"}
+              </Link>
+            </div>
             <div className="mt-8">
               <HomeSearch />
             </div>

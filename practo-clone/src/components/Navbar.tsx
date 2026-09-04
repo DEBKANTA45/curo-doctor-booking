@@ -12,6 +12,11 @@ const patientLinks = [
   { href: "/doctors", label: "Find Doctors" },
 ];
 
+const signedInPatientLinks = [
+  ...patientLinks,
+  { href: "/appointments", label: "Appointments" },
+];
+
 const doctorLinks = [
   { href: "/doctor/dashboard", label: "Dashboard" },
   { href: "/doctor/schedule", label: "Schedule" },
@@ -27,7 +32,11 @@ export default function Navbar() {
   const [unread, setUnread] = useState(0);
 
   const isDoctor = account?.role === "doctor";
-  const navLinks = isDoctor ? doctorLinks : patientLinks;
+  const navLinks = isDoctor
+    ? doctorLinks
+    : account?.role === "patient"
+    ? signedInPatientLinks
+    : patientLinks;
   const logoHref = isDoctor ? "/doctor/home" : "/";
 
   useEffect(() => {
@@ -56,31 +65,32 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur">
-      <div className="mx-auto flex max-w-content items-center justify-between px-5 py-4">
-        <Link href={logoHref} className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-white">
-            <Stethoscope size={18} />
+    <header className="sticky top-0 z-40 border-b border-line/80 bg-surface/95 backdrop-blur">
+      <div className="mx-auto flex h-16 max-w-content items-center justify-between px-5">
+        <Link href={logoHref} className="group flex items-center gap-2.5" aria-label="Curo home">
+          <span className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-white shadow-sm transition-transform duration-150 ease-out group-hover:-translate-y-0.5 group-active:scale-[0.97]">
+            <Stethoscope size={19} />
           </span>
-          <span className="font-display text-lg font-semibold tracking-tight text-ink">
+          <span className="font-display text-xl font-semibold tracking-tight text-ink">
             Curo
           </span>
           {isDoctor && (
-            <span className="rounded-full bg-primary-light px-2 py-0.5 text-xs font-medium text-primary-dark">
-              Doctor
+            <span className="rounded-full border border-primary/10 bg-primary-light px-2 py-0.5 text-[11px] font-semibold text-primary-dark">
+              For doctors
             </span>
           )}
         </Link>
 
-        <nav className="hidden items-center gap-7 md:flex">
+        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center rounded-full border border-line bg-bg p-1 md:flex" aria-label="Primary navigation">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className={`text-sm transition-colors ${
+              aria-current={pathname === link.href ? "page" : undefined}
+              className={`rounded-full px-4 py-2 text-sm font-medium transition-[background-color,color,box-shadow] duration-150 ease-out ${
                 pathname === link.href
-                  ? "text-primary font-medium"
-                  : "text-muted hover:text-ink"
+                  ? "bg-surface text-primary shadow-sm"
+                  : "text-muted hover:bg-surface hover:text-ink"
               }`}
             >
               {link.label}
@@ -88,22 +98,13 @@ export default function Navbar() {
           ))}
         </nav>
 
-        <div className="hidden items-center gap-3 md:flex">
-          {!account && (
-            <Link
-              href="/doctor/login"
-              className="text-sm text-muted hover:text-ink"
-            >
-              For Doctors
-            </Link>
-          )}
-
+        <div className="hidden items-center gap-2 md:flex">
           {account ? (
             <div className="flex items-center gap-2">
               {account.role === "patient" && (
                 <Link
                   href="/appointments"
-                  className="relative flex h-9 w-9 items-center justify-center rounded-md border border-line text-muted hover:border-primary hover:text-ink"
+                  className="relative flex h-10 w-10 items-center justify-center rounded-md border border-line text-muted transition-[border-color,color,background-color,transform] duration-150 ease-out hover:border-primary hover:bg-primary-light hover:text-primary-dark active:scale-[0.97]"
                   aria-label="Notifications"
                 >
                   <Bell size={16} />
@@ -117,7 +118,7 @@ export default function Navbar() {
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setMenuOpen((v) => !v)}
-                  className="flex items-center gap-2 rounded-md border border-line px-3 py-2 text-sm text-ink hover:border-primary"
+                  className="flex items-center gap-2 rounded-md border border-line bg-surface px-3 py-2 text-sm font-medium text-ink transition-[border-color,background-color,transform] duration-150 ease-out hover:border-primary hover:bg-bg active:scale-[0.97]"
                 >
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-light text-xs font-medium text-primary-dark">
                     {account.name.charAt(0).toUpperCase()}
@@ -126,19 +127,19 @@ export default function Navbar() {
                   <ChevronDown size={14} />
                 </button>
                 {menuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 rounded-md border border-line bg-surface py-1 shadow-sm">
+                  <div className="absolute right-0 mt-2 w-52 origin-top-right rounded-md border border-line bg-surface p-1 shadow-lg">
                     {account.role === "patient" ? (
                       <>
                         <Link
                           href="/appointments"
-                          className="block px-4 py-2 text-sm text-ink hover:bg-bg"
+                          className="block rounded-sm px-3 py-2 text-sm text-ink hover:bg-bg"
                           onClick={() => setMenuOpen(false)}
                         >
                           My Appointments
                         </Link>
                         <Link
                           href="/profile"
-                          className="block px-4 py-2 text-sm text-ink hover:bg-bg"
+                          className="block rounded-sm px-3 py-2 text-sm text-ink hover:bg-bg"
                           onClick={() => setMenuOpen(false)}
                         >
                           My Profile
@@ -147,7 +148,7 @@ export default function Navbar() {
                     ) : (
                       <Link
                         href="/doctor/profile"
-                        className="block px-4 py-2 text-sm text-ink hover:bg-bg"
+                        className="block rounded-sm px-3 py-2 text-sm text-ink hover:bg-bg"
                         onClick={() => setMenuOpen(false)}
                       >
                         Profile
@@ -155,7 +156,7 @@ export default function Navbar() {
                     )}
                     <button
                       onClick={handleLogout}
-                      className="block w-full px-4 py-2 text-left text-sm text-accent hover:bg-bg"
+                      className="block w-full rounded-sm px-3 py-2 text-left text-sm font-medium text-accent hover:bg-accent-light"
                     >
                       Log out
                     </button>
@@ -167,13 +168,13 @@ export default function Navbar() {
             <>
               <Link
                 href="/login"
-                className="text-sm text-ink hover:text-primary"
+                className="rounded-sm px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-bg hover:text-primary"
               >
                 Log in
               </Link>
               <Link
                 href="/register"
-                className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+                className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition-[background-color,transform] duration-150 ease-out hover:bg-primary-dark active:scale-[0.97]"
               >
                 Sign up
               </Link>
@@ -182,7 +183,7 @@ export default function Navbar() {
         </div>
 
         <button
-          className="md:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-md border border-line text-ink transition-[background-color,transform] duration-150 ease-out hover:bg-bg active:scale-[0.97] md:hidden"
           onClick={() => setOpen((v) => !v)}
           aria-label="Toggle menu"
         >
@@ -191,13 +192,13 @@ export default function Navbar() {
       </div>
 
       {open && (
-        <div className="border-t border-line px-5 py-4 md:hidden">
-          <nav className="flex flex-col gap-3">
+        <div className="border-t border-line bg-surface px-5 py-4 md:hidden">
+          <nav className="mx-auto flex max-w-content flex-col gap-1" aria-label="Mobile navigation">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-sm text-ink"
+                className={`rounded-sm px-3 py-2.5 text-sm font-medium ${pathname === link.href ? "bg-primary-light text-primary-dark" : "text-ink hover:bg-bg"}`}
                 onClick={() => setOpen(false)}
               >
                 {link.label}
