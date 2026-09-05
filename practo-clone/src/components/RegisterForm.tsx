@@ -7,6 +7,7 @@ import { CheckCircle2, Eye, EyeOff, UserPlus, Mail, Lock, User, Phone } from "lu
 import { registerPatient } from "@/lib/mock-db";
 import { useAuth } from "@/context/AuthContext";
 import { PatientRegisterIllustration } from "@/components/illustrations/AuthIllustrations";
+import EcgOverlay from "@/components/EcgOverlay";
 
 const points = [
   "Compare doctors by fee, experience, and rating",
@@ -26,6 +27,7 @@ export default function RegisterForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showEcg, setShowEcg] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +37,7 @@ export default function RegisterForm() {
       return;
     }
     refresh();
-    router.push(redirect);
+    setShowEcg(true);
   };
 
   return (
@@ -184,6 +186,11 @@ export default function RegisterForm() {
           </div>
         </div>
       </div>
+
+      <EcgOverlay
+        show={showEcg}
+        onDone={() => router.push(redirect)}
+      />
     </div>
   );
 }

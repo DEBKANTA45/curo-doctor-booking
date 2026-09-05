@@ -127,7 +127,7 @@ export default function ChatBot() {
         aria-label={open ? "Close assistant" : "Open assistant"}
         aria-expanded={open}
         aria-controls="curo-assistant"
-        className="fixed bottom-4 right-4 z-50 flex h-12 items-center gap-2 rounded-full bg-primary px-4 text-white shadow-lg transition-[transform,background-color] duration-150 ease-out hover:bg-primary-dark active:scale-[0.97] sm:bottom-5 sm:right-5"
+        className="fixed bottom-4 right-4 z-50 flex h-12 items-center gap-2 rounded-full bg-brand-gradient px-4 text-white shadow-glow transition-[transform,filter] duration-150 ease-out hover:brightness-[1.06] active:scale-[0.97] sm:bottom-5 sm:right-5"
       >
         {open ? <X size={20} /> : <MessageCircle size={20} />}
         <span className="text-sm font-medium">{open ? "Close" : "Need help?"}</span>
@@ -143,8 +143,8 @@ export default function ChatBot() {
           className="fixed bottom-20 right-4 z-50 flex h-[min(580px,calc(100dvh-6rem))] w-[calc(100vw-2rem)] max-w-[400px] flex-col overflow-hidden rounded-lg border border-line bg-surface shadow-xl sm:bottom-24 sm:right-5"
         >
           {/* Header */}
-          <div className="flex items-center gap-3 border-b border-line bg-primary-light px-4 py-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary text-white">
+          <div className="flex items-center gap-3 border-b border-line bg-brand-gradient-soft px-4 py-3">
+            <span className="icon-tile shrink-0">
               <Stethoscope size={17} />
             </span>
             <div className="min-w-0 flex-1">
@@ -156,7 +156,7 @@ export default function ChatBot() {
               onClick={resetConversation}
               aria-label="Start a new conversation"
               title="Start a new conversation"
-              className="flex h-8 w-8 items-center justify-center rounded-sm text-muted transition-[background-color,color,transform] duration-150 ease-out hover:bg-surface hover:text-ink active:scale-[0.97]"
+              className="flex h-8 w-8 items-center justify-center rounded-sm text-muted transition-[background-color,color,transform] duration-150 ease-out hover:bg-surface/80 hover:text-primary-dark active:scale-[0.97]"
             >
               <RotateCcw size={16} />
             </button>
@@ -164,7 +164,7 @@ export default function ChatBot() {
               type="button"
               onClick={() => setOpen(false)}
               aria-label="Close assistant"
-              className="flex h-8 w-8 items-center justify-center rounded-sm text-muted transition-[background-color,color,transform] duration-150 ease-out hover:bg-surface hover:text-ink active:scale-[0.97]"
+              className="flex h-8 w-8 items-center justify-center rounded-sm text-muted transition-[background-color,color,transform] duration-150 ease-out hover:bg-surface/80 hover:text-primary-dark active:scale-[0.97]"
             >
               <X size={17} />
             </button>
@@ -175,13 +175,12 @@ export default function ChatBot() {
             {messages.map((m) => (
               <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div
-                  className={`max-w-[85%] rounded-md px-3 py-2 text-sm ${
-                    m.role === "user"
-                      ? "bg-primary text-white"
+                  className={`max-w-[85%] rounded-md px-3 py-2 text-sm shadow-sm ${m.role === "user"
+                      ? "bg-brand-gradient text-white"
                       : m.isEmergency
-                      ? "border border-accent bg-accent-light text-ink"
-                      : "bg-bg text-ink"
-                  }`}
+                        ? "border border-accent bg-accent-light text-ink"
+                        : "border border-line bg-surface text-ink"
+                    }`}
                 >
                   {m.isEmergency && (
                     <div className="mb-1 flex items-center gap-1 text-xs font-semibold text-accent">
@@ -197,7 +196,7 @@ export default function ChatBot() {
                           key={a.href + a.label}
                           href={a.href}
                           onClick={() => setOpen(false)}
-                          className="rounded-sm bg-primary px-2.5 py-1 text-xs font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-primary-dark active:scale-[0.97]"
+                                                    className="rounded-full bg-cyan-dark px-2.5 py-1 text-xs font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:brightness-110 active:scale-[0.97]"
                         >
                           {a.label}
                         </Link>
@@ -210,7 +209,7 @@ export default function ChatBot() {
 
             {isTyping && (
               <div className="flex justify-start" role="status" aria-label="Assistant is preparing a reply">
-                <div className="flex items-center gap-2 rounded-md bg-bg px-3 py-2 text-sm text-muted">
+                               <div className="flex items-center gap-2 rounded-md border border-line bg-surface px-3 py-2 text-sm text-muted shadow-sm">
                   <span className="flex items-center gap-1" aria-hidden="true">
                     <span className="chat-typing-dot" />
                     <span className="chat-typing-dot chat-typing-dot-delay-one" />
@@ -247,7 +246,7 @@ export default function ChatBot() {
               onClick={() => handleSend()}
               aria-label="Send"
               disabled={!input.trim() || isTyping}
-              className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-white transition-[transform,background-color] duration-150 ease-out hover:bg-primary-dark active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
+                            className="flex h-9 w-9 items-center justify-center rounded-md bg-brand-gradient text-white shadow-sm transition-[transform,filter] duration-150 ease-out hover:brightness-[1.06] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40 disabled:brightness-100"
             >
               <Send size={16} />
             </button>

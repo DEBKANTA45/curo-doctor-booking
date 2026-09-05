@@ -1,11 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, CheckCircle2, User, Clock, Download } from "lucide-react";
+import {
+  ChevronLeft,
+  CheckCircle2,
+  User,
+  Clock,
+  Download,
+  Phone,
+  Cake,
+  Droplet,
+  Activity,
+  Ruler,
+  Weight,
+  ShieldAlert,
+  ClipboardList,
+  Pill,
+  Contact,
+} from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { Appointment } from "@/lib/types";
-import { getAppointmentById, completeAppointment } from "@/lib/mock-db";
+import { Appointment, PatientProfile } from "@/lib/types";
+import { getAppointmentById, completeAppointment, getPatientProfile } from "@/lib/mock-db";
 import { downloadPrescription } from "@/lib/utils";
 
 function todayIso() {
@@ -13,9 +29,30 @@ function todayIso() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+function VitalRow({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value?: string;
+}) {
+  return (
+    <div className="flex items-start gap-2.5 border-b border-line py-2.5 last:border-b-0">
+      <Icon size={15} className="mt-0.5 shrink-0 text-muted" />
+      <div className="min-w-0">
+        <p className="text-xs text-muted">{label}</p>
+        <p className="truncate text-sm text-ink">{value?.trim() ? value : "Not provided"}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function ConsultPage({ params }: { params: { id: string } }) {
   const { account, loading } = useAuth();
   const [appointment, setAppointment] = useState<Appointment | null | undefined>(undefined);
+  const [profile, setProfile] = useState<PatientProfile | null>(null);
 
   const [diagnosis, setDiagnosis] = useState("");
   const [report, setReport] = useState("");
@@ -29,6 +66,7 @@ export default function ConsultPage({ params }: { params: { id: string } }) {
       setDiagnosis(found.diagnosis ?? "");
       setReport(found.report ?? "");
       setMedicines(found.medicines ?? "");
+      setProfile(getPatientProfile(found.patientEmail));
     }
   }, [params.id]);
 
@@ -87,7 +125,7 @@ export default function ConsultPage({ params }: { params: { id: string } }) {
         <ChevronLeft size={16} /> Back to dashboard
       </Link>
 
-      <div className="mt-4 grid gap-8 lg:grid-cols-[1fr_280px]">
+      <div className="mt-4 grid gap-8 lg:grid-cols-[1fr_300px]">
         <div>
           <div className="flex items-center justify-between">
             <h1 className="font-display text-2xl font-semibold text-ink">
@@ -188,9 +226,9 @@ export default function ConsultPage({ params }: { params: { id: string } }) {
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-light text-primary-dark">
                 <User size={18} />
               </span>
-              <div>
-                <p className="text-sm font-medium text-ink">{appointment.patientName}</p>
-                <p className="text-xs text-muted">{appointment.patientEmail}</p>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-ink">{appointment.patientName}</p>
+                <p className="truncate text-xs text-muted">{appointment.patientEmail}</p>
               </div>
             </div>
             <div className="mt-4 space-y-2 border-t border-line pt-4 text-sm">
@@ -202,6 +240,28 @@ export default function ConsultPage({ params }: { params: { id: string } }) {
                 <span className="text-muted">Fee</span>
                 <span className="font-tabular text-ink">₹{appointment.fee}</span>
               </div>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-lg border border-line bg-surface p-5">
+            <p className="text-sm font-medium text-ink">Patient profile</p>
+            {!profile && (
+              <p className="mt-3 text-xs text-muted">
+                This patient hasn't added medical profile details yet.
+              </p>
+            )}
+            <div className="mt-1">
+              <VitalRow icon={Phone} label="Phone" value={profile?.phone} />
+              <VitalRow icon={Cake} label="Date of birth" value={profile?.dob} />
+              <VitalRow icon={User} label="Gender" value={profile?.gender} />
+              <VitalRow icon={Droplet} label="Blood group" value={profile?.bloodGroup} />
+              <VitalRow icon={Activity} label="Blood pressure" value={profile?.bloodPressure} />
+              <VitalRow icon={Ruler} label="Height" value={profile?.height} />
+              <VitalRow icon={Weight} label="Weight" value={profile?.weight} />
+              <VitalRow icon={ShieldAlert} label="Allergies" value={profile?.allergies} />
+              <VitalRow icon={ClipboardList} label="Medical history" value={profile?.medicalHistory} />
+              <VitalRow icon={Pill} label="Current medications" value={profile?.currentMedications} />
+              <VitalRow icon={Contact} label="Emergency contact" value={profile?.emergencyContact} />
             </div>
           </div>
         </aside>

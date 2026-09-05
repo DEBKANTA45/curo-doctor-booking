@@ -21,6 +21,7 @@ import { specialties } from "@/lib/utils";
 import { registerDoctor } from "@/lib/mock-db";
 import { useAuth } from "@/context/AuthContext";
 import { DoctorRegisterIllustration } from "@/components/illustrations/AuthIllustrations";
+import EcgOverlay from "@/components/EcgOverlay";
 
 const points = [
   "List your practice in minutes",
@@ -42,6 +43,7 @@ export default function DoctorRegisterForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showEcg, setShowEcg] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +68,7 @@ export default function DoctorRegisterForm() {
       return;
     }
     refresh();
-    router.push("/doctor/home");
+    setShowEcg(true);
   };
 
   return (
@@ -315,6 +317,11 @@ export default function DoctorRegisterForm() {
           </div>
         </div>
       </div>
+
+      <EcgOverlay
+        show={showEcg}
+        onDone={() => router.push("/doctor/home")}
+      />
     </div>
   );
 }

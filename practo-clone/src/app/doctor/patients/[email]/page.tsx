@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { ChevronLeft, User, History, Phone, Cake, Droplet, ShieldAlert, ClipboardList, Pill, Contact } from "lucide-react";
+import { ChevronLeft, User, History, Phone, Cake, Droplet, Activity, Ruler, Weight, ShieldAlert, ClipboardList, Pill, Contact } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { findPatientForDoctor, getPatientProfile } from "@/lib/mock-db";
 
@@ -106,6 +106,9 @@ export default function PatientDetailsPage({ params }: { params: { email: string
             <DetailRow icon={Cake} label="Date of birth" value={profile?.dob} />
             <DetailRow icon={User} label="Gender" value={profile?.gender} />
             <DetailRow icon={Droplet} label="Blood group" value={profile?.bloodGroup} />
+            <DetailRow icon={Activity} label="Blood pressure" value={profile?.bloodPressure} />
+            <DetailRow icon={Ruler} label="Height" value={profile?.height} />
+            <DetailRow icon={Weight} label="Weight" value={profile?.weight} />
             <DetailRow icon={ShieldAlert} label="Allergies" value={profile?.allergies} />
             <DetailRow icon={ClipboardList} label="Medical history" value={profile?.medicalHistory} />
             <DetailRow icon={Pill} label="Current medications" value={profile?.currentMedications} />

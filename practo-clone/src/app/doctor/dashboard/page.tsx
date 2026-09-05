@@ -3,7 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { CalendarX2, User, ChevronRight, X, CalendarDays } from "lucide-react";
+import {
+  CalendarX2,
+  User,
+  ChevronRight,
+  X,
+  CalendarDays,
+  Clock,
+  CheckCircle2,
+  XCircle,
+} from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Appointment } from "@/lib/types";
 import { getAppointmentsForDoctor, getCustomDoctorById, rescheduleAppointment } from "@/lib/mock-db";
@@ -168,113 +177,160 @@ export default function DoctorDashboardPage() {
     );
   }
 
-  const tabs: { key: Tab; label: string; count: number }[] = [
-    { key: "pending", label: "Pending", count: pending.length },
-    { key: "completed", label: "Completed", count: completed.length },
-    { key: "cancelled", label: "Cancelled", count: cancelled.length },
+  const navItems: { key: Tab; label: string; count: number; icon: typeof Clock }[] = [
+    { key: "pending", label: "Pending", count: pending.length, icon: Clock },
+    { key: "completed", label: "Completed", count: completed.length, icon: CheckCircle2 },
+    { key: "cancelled", label: "Cancelled", count: cancelled.length, icon: XCircle },
   ];
+
+  const activeList = tab === "pending" ? pending : tab === "completed" ? completed : cancelled;
+  const emptyLabel =
+    tab === "pending" ? "pending patients" : tab === "completed" ? "completed patients" : "cancelled patients";
 
   return (
     <div className="mx-auto max-w-content px-5 py-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-semibold text-ink">
+          <h1 className="font-display text-xl font-semibold text-ink sm:text-2xl">
             {account.name}
           </h1>
-          <p className="mt-1 text-sm text-muted">{account.specialty}</p>
+          <p className="text-sm text-muted">{account.specialty}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            id="dateFilter"
+            type="date"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            className="rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm text-ink outline-none focus:border-primary"
+          />
+          {dateFilter && (
+            <button
+              onClick={() => setDateFilter("")}
+              className="flex items-center gap-1 text-xs text-muted hover:text-ink"
+            >
+              <X size={12} /> All dates
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="mt-6 flex flex-wrap items-center gap-2">
-        <label htmlFor="dateFilter" className="text-xs text-muted">Showing</label>
-        <input
-          id="dateFilter"
-          type="date"
-          value={dateFilter}
-          onChange={(e) => setDateFilter(e.target.value)}
-          className="rounded-md border border-line px-2.5 py-1.5 text-sm text-ink outline-none focus:border-primary"
-        />
-        {dateFilter && (
-          <button
-            onClick={() => setDateFilter("")}
-            className="flex items-center gap-1 text-xs text-muted hover:text-ink"
-          >
-            <X size={12} /> Show all dates
-          </button>
-        )}
-      </div>
+      <div className="mt-6 grid gap-5 md:grid-cols-[210px_1fr] md:items-start">
+        <nav className="flex gap-2 overflow-x-auto pb-1 md:sticky md:top-20 md:flex-col md:gap-1.5 md:overflow-visible md:pb-0">
+          {navItems.map((item) => {
+            const isActive = tab === item.key;
+            return (
+              <button
+                key={item.key}
+                onClick={() => {
+                  setTab(item.key);
+                  setOpenRescheduleId(null);
+                }}
+                className={`flex shrink-0 items-center gap-2.5 rounded-md border px-3.5 py-2.5 text-sm font-medium transition-colors md:w-full ${
+                  isActive
+                    ? "border-primary/30 bg-primary-light text-primary-dark shadow-card"
+                    : "border-line bg-surface text-muted hover:border-primary/30 hover:text-ink"
+                }`}
+              >
+                <item.icon size={16} />
+                <span className="flex-1 text-left">{item.label}</span>
+                <span
+                  className={`font-tabular text-xs ${isActive ? "text-primary-dark" : "text-faint"}`}
+                >
+                  {item.count}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-lg border border-line bg-surface p-5">
-          <p className="text-xs text-muted">Pending</p>
-          <p className="mt-1 font-tabular text-2xl font-semibold text-ink">{pending.length}</p>
-        </div>
-        <div className="rounded-lg border border-line bg-surface p-5">
-          <p className="text-xs text-muted">Completed</p>
-          <p className="mt-1 font-tabular text-2xl font-semibold text-ink">{completed.length}</p>
-        </div>
-        <div className="rounded-lg border border-line bg-surface p-5">
-          <p className="text-xs text-muted">Cancelled</p>
-          <p className="mt-1 font-tabular text-2xl font-semibold text-ink">{cancelled.length}</p>
-        </div>
-      </div>
-
-      <div className="mt-8 flex items-center gap-1 border-b border-line">
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => {
-              setTab(t.key);
-              setOpenRescheduleId(null);
-            }}
-            className={`border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
-              tab === t.key
-                ? "border-primary text-ink"
-                : "border-transparent text-muted hover:text-ink"
-            }`}
-          >
-            {t.label} ({t.count})
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-5">
-        {tab === "pending" && (
-          pending.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-line py-12 text-center">
-              <CalendarX2 className="text-faint" size={28} />
+        <div>
+          {activeList.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-line py-14 text-center">
+              <CalendarX2 className="text-faint" size={26} />
               <p className="text-sm text-muted">
-                {dateFilter ? "No pending patients on this date." : "No pending patients."}
+                {dateFilter ? `No ${emptyLabel} on this date.` : `No ${emptyLabel}.`}
               </p>
             </div>
           ) : (
             <div className="space-y-3">
-              {pending.map((a) => (
-                                <div
-                  key={a.id}
-                  className="rounded-lg border border-line bg-surface p-4 transition-colors hover:border-primary"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <button
-                      onClick={() => router.push(`/doctor/consult/${a.id}`)}
-                      className="flex flex-1 items-center gap-3 text-left"
-                    >
-                      <span
-                        draggable
-                        onDragStart={(e) => {
-                          e.stopPropagation();
-                          e.dataTransfer.setData("text/plain", a.id);
-                        }}
-                        className="flex cursor-grab items-center gap-2 rounded-md py-0.5 pr-2 active:cursor-grabbing"
-                        title="Drag onto a date to reschedule"
+              {tab === "pending" &&
+                pending.map((a) => (
+                  <div
+                    key={a.id}
+                    className="card card-hover p-4"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <button
+                        onClick={() => router.push(`/doctor/consult/${a.id}`)}
+                        className="flex flex-1 items-center gap-3 text-left"
                       >
-                        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-light text-primary-dark">
-                          <User size={16} />
+                        <span
+                          draggable
+                          onDragStart={(e) => {
+                            e.stopPropagation();
+                            e.dataTransfer.setData("text/plain", a.id);
+                          }}
+                          className="flex cursor-grab items-center gap-2 rounded-md py-0.5 pr-2 active:cursor-grabbing"
+                          title="Drag onto a date to reschedule"
+                        >
+                          <span className="icon-tile-soft h-9 w-9">
+                            <User size={16} />
+                          </span>
+                          <span className="text-sm font-medium text-ink">{a.patientName}</span>
                         </span>
-                        <span className="text-sm font-medium text-ink">{a.patientName}</span>
+                        <span className="hidden text-xs text-muted sm:inline">{a.reason}</span>
+                      </button>
+                      <div className="flex items-center gap-2">
+                        <div className="text-right text-sm text-ink">
+                          <p className="font-tabular">
+                            {a.date} &middot; {a.time}
+                          </p>
+                          <p className="text-xs text-muted">₹{a.fee}</p>
+                        </div>
+                        <button
+                          onClick={() =>
+                            setOpenRescheduleId(openRescheduleId === a.id ? null : a.id)
+                          }
+                          aria-label="Reschedule"
+                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md border transition-colors ${
+                            openRescheduleId === a.id
+                              ? "border-primary bg-primary text-white"
+                              : "border-line text-muted hover:border-primary hover:text-ink"
+                          }`}
+                        >
+                          <CalendarDays size={15} />
+                        </button>
+                        <ChevronRight size={16} className="hidden text-faint sm:block" />
+                      </div>
+                    </div>
+
+                    {openRescheduleId === a.id && (
+                      <RescheduleCalendar
+                        appointmentId={a.id}
+                        availableDays={myAvailableDays}
+                        onReschedule={handleReschedule}
+                      />
+                    )}
+                  </div>
+                ))}
+
+              {tab === "completed" &&
+                completed.map((a) => (
+                  <Link
+                    key={a.id}
+                    href={`/doctor/consult/${a.id}`}
+                    className="card card-hover flex items-center justify-between gap-3 p-4"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="icon-tile-soft h-9 w-9">
+                        <User size={16} />
                       </span>
-                      <span className="text-xs text-muted">{a.reason}</span>
-                    </button>
+                      <div>
+                        <p className="text-sm font-medium text-ink">{a.patientName}</p>
+                        <p className="text-xs text-muted">{a.diagnosis || "No diagnosis recorded"}</p>
+                      </div>
+                    </div>
                     <div className="flex items-center gap-2">
                       <div className="text-right text-sm text-ink">
                         <p className="font-tabular">
@@ -282,108 +338,34 @@ export default function DoctorDashboardPage() {
                         </p>
                         <p className="text-xs text-muted">₹{a.fee}</p>
                       </div>
-                      <button
-                        onClick={() =>
-                          setOpenRescheduleId(openRescheduleId === a.id ? null : a.id)
-                        }
-                        aria-label="Reschedule"
-                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md border transition-colors ${
-                          openRescheduleId === a.id
-                            ? "border-primary bg-primary text-white"
-                            : "border-line text-muted hover:border-primary hover:text-ink"
-                        }`}
-                      >
-                        <CalendarDays size={15} />
-                      </button>
-                      <ChevronRight size={16} className="hidden text-faint sm:block" />
+                      <ChevronRight size={16} className="text-faint" />
                     </div>
-                  </div>
+                  </Link>
+                ))}
 
-                  {openRescheduleId === a.id && (
-                    <RescheduleCalendar
-                      appointmentId={a.id}
-                      availableDays={myAvailableDays}
-                      onReschedule={handleReschedule}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          )
-        )}
-
-        {tab === "completed" && (
-          completed.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-line py-12 text-center">
-              <CalendarX2 className="text-faint" size={28} />
-              <p className="text-sm text-muted">
-                {dateFilter ? "No completed patients on this date." : "No completed patients."}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {completed.map((a) => (
-                <Link
-                  key={a.id}
-                  href={`/doctor/consult/${a.id}`}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-line bg-surface p-4 transition-colors hover:border-primary"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-light text-primary-dark">
-                      <User size={16} />
-                    </span>
-                    <div>
-                      <p className="text-sm font-medium text-ink">{a.patientName}</p>
-                      <p className="text-xs text-muted">{a.diagnosis || "No diagnosis recorded"}</p>
+              {tab === "cancelled" &&
+                cancelled.map((a) => (
+                  <div
+                    key={a.id}
+                    className="flex items-center justify-between gap-3 rounded-lg border border-line bg-bg p-4 opacity-80"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-light text-accent">
+                        <User size={16} />
+                      </span>
+                      <div>
+                        <p className="text-sm font-medium text-ink">{a.patientName}</p>
+                        <p className="text-xs text-muted">{a.reason}</p>
+                      </div>
                     </div>
+                    <p className="font-tabular text-sm text-ink">
+                      {a.date} &middot; {a.time}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="text-right text-sm text-ink">
-                      <p className="font-tabular">
-                        {a.date} &middot; {a.time}
-                      </p>
-                      <p className="text-xs text-muted">₹{a.fee}</p>
-                    </div>
-                    <ChevronRight size={16} className="text-faint" />
-                  </div>
-                </Link>
-              ))}
+                ))}
             </div>
-          )
-        )}
-
-        {tab === "cancelled" && (
-          cancelled.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-line py-12 text-center">
-              <CalendarX2 className="text-faint" size={28} />
-              <p className="text-sm text-muted">
-                {dateFilter ? "No cancelled patients on this date." : "No cancelled patients."}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {cancelled.map((a) => (
-                <div
-                  key={a.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-line bg-bg p-4 opacity-80"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-light text-accent">
-                      <User size={16} />
-                    </span>
-                    <div>
-                      <p className="text-sm font-medium text-ink">{a.patientName}</p>
-                      <p className="text-xs text-muted">{a.reason}</p>
-                    </div>
-                  </div>
-                  <p className="font-tabular text-sm text-ink">
-                    {a.date} &middot; {a.time}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

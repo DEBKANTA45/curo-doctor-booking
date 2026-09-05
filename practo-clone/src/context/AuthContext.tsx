@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from "react";
 import { Account } from "@/lib/types";
 import { getSession, logout as logoutDb } from "@/lib/mock-db";
 
@@ -22,25 +22,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [account, setAccount] = useState<Account | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const refresh = () => {
+  const refresh = useCallback(() => {
     setAccount(getSession());
-  };
+  }, []);
 
   useEffect(() => {
     refresh();
     setLoading(false);
-  }, []);
+  }, [refresh]);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     logoutDb();
     setAccount(null);
-  };
+  }, []);
 
-  return (
-    <AuthContext.Provider value={{ account, loading, refresh, logout }}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo<AuthContextValue>(
+    () => ({ account, loading, refresh, logout }),
+    [account, loading, refresh, logout]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

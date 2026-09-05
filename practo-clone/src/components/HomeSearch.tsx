@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Search, MapPin } from "lucide-react";
+import { Search, MapPin, ArrowRight } from "lucide-react";
 import { specialties, doctors } from "@/lib/utils";
 
 const cities = Array.from(new Set(doctors.map((d) => d.city))).sort();
@@ -23,14 +23,11 @@ export default function HomeSearch() {
   return (
     <form
       onSubmit={handleSearch}
-      className="w-full rounded-lg border border-line bg-surface p-4 shadow-[0_1px_0_rgba(16,32,28,0.03)] sm:p-5"
+      className="w-full rounded-lg border border-line bg-surface p-3 shadow-soft sm:p-3.5"
     >
-      <p className="mb-3 text-sm font-medium text-ink">
-        Search doctors by specialty and city
-      </p>
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <div className="flex flex-1 items-center gap-2 rounded-md border border-line px-3 py-2.5">
-          <Search size={16} className="shrink-0 text-faint" />
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
+        <div className="flex flex-1 items-center gap-2.5 rounded-md border border-line bg-bg px-3.5 py-3 transition-colors focus-within:border-primary focus-within:bg-surface">
+          <Search size={17} className="shrink-0 text-primary" />
           <select
             value={specialty}
             onChange={(e) => setSpecialty(e.target.value)}
@@ -45,8 +42,10 @@ export default function HomeSearch() {
           </select>
         </div>
 
-        <div className="flex flex-1 items-center gap-2 rounded-md border border-line px-3 py-2.5">
-          <MapPin size={16} className="shrink-0 text-faint" />
+        <div className="hidden h-8 w-px bg-line sm:block" />
+
+        <div className="flex flex-1 items-center gap-2.5 rounded-md border border-line bg-bg px-3.5 py-3 transition-colors focus-within:border-primary focus-within:bg-surface">
+          <MapPin size={17} className="shrink-0 text-cyan-dark" />
           <select
             value={city}
             onChange={(e) => setCity(e.target.value)}
@@ -61,11 +60,8 @@ export default function HomeSearch() {
           </select>
         </div>
 
-        <button
-          type="submit"
-          className="rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-dark"
-        >
-          Search
+        <button type="submit" className="btn-primary btn-md w-full sm:w-auto">
+          Search <ArrowRight size={15} />
         </button>
       </div>
     </form>

@@ -7,6 +7,7 @@ import { CheckCircle2, Eye, EyeOff, Stethoscope, Mail, Lock } from "lucide-react
 import { login } from "@/lib/mock-db";
 import { useAuth } from "@/context/AuthContext";
 import { DoctorLoginIllustration } from "@/components/illustrations/AuthIllustrations";
+import EcgOverlay from "@/components/EcgOverlay";
 
 const points = [
   "Manage your appointment requests",
@@ -24,6 +25,7 @@ export default function DoctorLoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showEcg, setShowEcg] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +35,7 @@ export default function DoctorLoginForm() {
       return;
     }
     refresh();
-    router.push(redirect);
+    setShowEcg(true);
   };
 
   return (
@@ -146,6 +148,11 @@ export default function DoctorLoginForm() {
           </div>
         </div>
       </div>
+
+      <EcgOverlay
+        show={showEcg}
+        onDone={() => router.push(redirect)}
+      />
     </div>
   );
 }

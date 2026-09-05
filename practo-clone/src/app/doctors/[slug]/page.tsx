@@ -3,11 +3,10 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { BadgeCheck, Globe2, MapPin, Clock } from "lucide-react";
+import { BadgeCheck, Globe2, MapPin, Clock, ShieldCheck } from "lucide-react";
 import { getAllReviewsForDoctor, getRatingSummary } from "@/lib/mock-db";
 import { useDoctorBySlug } from "@/lib/hooks";
 import RatingStars from "@/components/RatingStars";
-
 
 export default function DoctorProfilePage({
   params,
@@ -39,8 +38,8 @@ export default function DoctorProfilePage({
     <div className="mx-auto max-w-content px-5 py-8">
       <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
         <div>
-          <div className="flex flex-col gap-5 border-b border-line pb-7 sm:flex-row sm:items-start">
-            <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-full border border-line">
+          <div className="card flex flex-col gap-5 p-6 sm:flex-row sm:items-start">
+            <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-full border-2 border-white shadow-sm ring-1 ring-line">
               <Image src={doctor.photo} alt={doctor.name} fill sizes="112px" className="object-cover" />
             </div>
             <div>
@@ -67,24 +66,24 @@ export default function DoctorProfilePage({
                 </div>
               )}
               <p className="mt-3 flex items-center gap-1.5 text-sm text-muted">
-                <MapPin size={15} className="shrink-0" />
+                <MapPin size={15} className="shrink-0 text-cyan-dark" />
                 {doctor.clinicName}{doctor.locality ? `, ${doctor.locality}` : ""}, {doctor.city}
               </p>
               <p className="mt-1.5 flex items-center gap-1.5 text-sm text-muted">
-                <Globe2 size={15} className="shrink-0" />
+                <Globe2 size={15} className="shrink-0 text-cyan-dark" />
                 {doctor.languages.join(", ")}
               </p>
             </div>
           </div>
 
-          <div className="border-b border-line py-7">
+          <div className="card mt-5 p-6">
             <h2 className="font-display text-lg font-semibold text-ink">About</h2>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
               {doctor.about}
             </p>
           </div>
 
-          <div className="border-b border-line py-7">
+          <div className="card mt-5 p-6">
             <h2 className="font-display text-lg font-semibold text-ink">
               Availability
             </h2>
@@ -92,10 +91,11 @@ export default function DoctorProfilePage({
               {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
                 <span
                   key={day}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium ${doctor.availableDays.includes(day)
-                      ? "bg-primary-light text-primary-dark"
-                      : "bg-bg text-faint line-through"
-                    }`}
+                  className={
+                    doctor.availableDays.includes(day)
+                      ? "badge-primary"
+                      : "badge bg-bg text-faint line-through"
+                  }
                 >
                   {day}
                 </span>
@@ -103,7 +103,7 @@ export default function DoctorProfilePage({
             </div>
           </div>
 
-          <div className="py-7">
+          <div className="card mt-5 p-6">
             <h2 className="font-display text-lg font-semibold text-ink">
               Patient reviews ({reviews.length})
             </h2>
@@ -131,7 +131,7 @@ export default function DoctorProfilePage({
         </div>
 
         <aside className="lg:sticky lg:top-24 lg:h-fit">
-          <div className="rounded-lg border border-line bg-surface p-5">
+          <div className="card p-6">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted">Consultation fee</span>
               <span className="font-tabular text-lg font-semibold text-ink">
@@ -139,16 +139,14 @@ export default function DoctorProfilePage({
               </span>
             </div>
             <div className="mt-3 flex items-center gap-1.5 text-sm text-muted">
-              <Clock size={15} />
+              <Clock size={15} className="text-cyan-dark" />
               Next available: {doctor.nextAvailable}
             </div>
-            <Link
-              href={`/doctors/${doctor.slug}/book`}
-              className="mt-5 block rounded-md bg-primary px-4 py-3 text-center text-sm font-medium text-white hover:bg-primary-dark"
-            >
+            <Link href={`/doctors/${doctor.slug}/book`} className="btn-primary btn-lg mt-5 w-full">
               Book appointment
             </Link>
-            <p className="mt-3 text-center text-xs text-faint">
+            <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-faint">
+              <ShieldCheck size={13} className="text-cyan-dark" />
               Free cancellation up to 2 hours before your visit
             </p>
           </div>

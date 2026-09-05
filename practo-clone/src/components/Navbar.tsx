@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Menu, X, Stethoscope, ChevronDown, Bell } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { getUnreadNotificationCount } from "@/lib/mock-db";
+import EcgOverlay from "@/components/EcgOverlay";
 
 const patientLinks = [
   { href: "/", label: "Home" },
@@ -17,10 +18,20 @@ const signedInPatientLinks = [
   { href: "/appointments", label: "Appointments" },
 ];
 
+// On /doctor/home there is no sidebar, so the navbar carries the full set of links.
+const doctorHomeLinks = [
+  { href: "/doctor/dashboard", label: "Dashboard" },
+  { href: "/doctor/feedback", label: "Feedback" },
+  { href: "/doctor/analytics", label: "Analytics" },
+];
+
+
+// Everywhere else, Dashboard/Patients/Schedule already live in the dashboard
+// sidebar, so the navbar only needs the links the sidebar doesn't have.
 const doctorLinks = [
   { href: "/doctor/dashboard", label: "Dashboard" },
-  { href: "/doctor/patients", label: "Patients Record" },
-  { href: "/doctor/schedule", label: "Schedule" },
+  { href: "/doctor/feedback", label: "Feedback" },
+  { href: "/doctor/analytics", label: "Analytics" },
 ];
 
 export default function Navbar() {
@@ -31,13 +42,14 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [unread, setUnread] = useState(0);
+  const [showLogoutEcg, setShowLogoutEcg] = useState(false);
 
-  const isDoctor = account?.role === "doctor";
-  const navLinks = isDoctor
-    ? doctorLinks
-    : account?.role === "patient"
-    ? signedInPatientLinks
-    : patientLinks;
+ const isDoctor = account?.role === "doctor";
+const navLinks = isDoctor
+  ? doctorLinks
+  : account?.role === "patient"
+  ? signedInPatientLinks
+  : patientLinks;
   const logoHref = isDoctor ? "/doctor/home" : "/";
 
   useEffect(() => {
@@ -60,25 +72,29 @@ export default function Navbar() {
   }, [menuOpen]);
 
   const handleLogout = () => {
-    logout();
+    // Don't clear the account yet — just close menus and start the
+    // animation. Clearing it now would flip the current (still-mounted)
+    // page into its "logged out" fallback state while the overlay is
+    // still playing, so the actual logout + redirect happen together
+    // once the animation completes (see onDone below).
     setMenuOpen(false);
-    router.push("/");
+    setOpen(false);
+    setShowLogoutEcg(true);
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line/80 bg-surface/95 backdrop-blur">
+    <>
+    <header className="sticky top-0 z-40 border-b border-line/70 bg-surface/90 shadow-nav backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-content items-center justify-between px-5">
         <Link href={logoHref} className="group flex items-center gap-2.5" aria-label="Curo home">
-          <span className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-white shadow-sm transition-transform duration-150 ease-out group-hover:-translate-y-0.5 group-active:scale-[0.97]">
+          <span className="flex h-10 w-10 items-center justify-center rounded-md bg-brand-gradient text-white shadow-glow transition-transform duration-150 ease-out group-hover:-translate-y-0.5 group-active:scale-[0.97]">
             <Stethoscope size={19} />
           </span>
           <span className="font-display text-xl font-semibold tracking-tight text-ink">
             Curo
           </span>
           {isDoctor && (
-            <span className="rounded-full border border-primary/10 bg-primary-light px-2 py-0.5 text-[11px] font-semibold text-primary-dark">
-              For doctors
-            </span>
+            <span className="badge-primary">For doctors</span>
           )}
         </Link>
 
@@ -90,7 +106,7 @@ export default function Navbar() {
               aria-current={pathname === link.href ? "page" : undefined}
               className={`rounded-full px-4 py-2 text-sm font-medium transition-[background-color,color,box-shadow] duration-150 ease-out ${
                 pathname === link.href
-                  ? "bg-surface text-primary shadow-sm"
+                  ? "bg-surface text-primary shadow-card"
                   : "text-muted hover:bg-surface hover:text-ink"
               }`}
             >
@@ -121,14 +137,14 @@ export default function Navbar() {
                   onClick={() => setMenuOpen((v) => !v)}
                   className="flex items-center gap-2 rounded-md border border-line bg-surface px-3 py-2 text-sm font-medium text-ink transition-[border-color,background-color,transform] duration-150 ease-out hover:border-primary hover:bg-bg active:scale-[0.97]"
                 >
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-light text-xs font-medium text-primary-dark">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-gradient text-xs font-medium text-white">
                     {account.name.charAt(0).toUpperCase()}
                   </span>
                   {account.role === "doctor" ? account.name : account.name.split(" ")[0]}
                   <ChevronDown size={14} />
                 </button>
                 {menuOpen && (
-                  <div className="absolute right-0 mt-2 w-52 origin-top-right rounded-md border border-line bg-surface p-1 shadow-lg">
+                  <div className="absolute right-0 mt-2 w-52 origin-top-right rounded-md border border-line bg-surface p-1 shadow-soft">
                     {account.role === "patient" ? (
                       <>
                         <Link
@@ -147,13 +163,22 @@ export default function Navbar() {
                         </Link>
                       </>
                     ) : (
-                      <Link
-                        href="/doctor/profile"
-                        className="block rounded-sm px-3 py-2 text-sm text-ink hover:bg-bg"
-                        onClick={() => setMenuOpen(false)}
-                      >
-                        Profile
-                      </Link>
+                      <>
+                        <Link
+                          href="/doctor/patients"
+                          className="block rounded-sm px-3 py-2 text-sm text-ink hover:bg-bg"
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          Patients
+                        </Link>
+                        <Link
+                          href="/doctor/profile"
+                          className="block rounded-sm px-3 py-2 text-sm text-ink hover:bg-bg"
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          Profile
+                        </Link>
+                      </>
                     )}
                     <button
                       onClick={handleLogout}
@@ -173,10 +198,7 @@ export default function Navbar() {
               >
                 Log in
               </Link>
-              <Link
-                href="/register"
-                className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition-[background-color,transform] duration-150 ease-out hover:bg-primary-dark active:scale-[0.97]"
-              >
+              <Link href="/register" className="btn-primary btn-md">
                 Sign up
               </Link>
             </>
@@ -218,9 +240,14 @@ export default function Navbar() {
                     </Link>
                   </>
                 ) : (
-                  <Link href="/doctor/profile" className="text-sm text-ink" onClick={() => setOpen(false)}>
-                    Profile
-                  </Link>
+                  <>
+                    <Link href="/doctor/patients" className="text-sm text-ink" onClick={() => setOpen(false)}>
+                      Patients
+                    </Link>
+                    <Link href="/doctor/profile" className="text-sm text-ink" onClick={() => setOpen(false)}>
+                      Profile
+                    </Link>
+                  </>
                 )}
                 <button
                   onClick={handleLogout}
@@ -246,5 +273,20 @@ export default function Navbar() {
         </div>
       )}
     </header>
+
+    <EcgOverlay
+      show={showLogoutEcg}
+      onDone={() => {
+        // Reset the overlay's own visibility first — it never gets another
+        // `show` transition to react to once we're on the destination page,
+        // so if we skip this the ecg-draw keyframes (which loop `infinite`)
+        // stay mounted and painted over the page forever instead of the
+        // home page ever becoming visible.
+        setShowLogoutEcg(false);
+        logout();
+        router.push("/");
+      }}
+    />
+    </>
   );
 }

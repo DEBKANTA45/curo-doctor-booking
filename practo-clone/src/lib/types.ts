@@ -94,6 +94,9 @@ export interface PatientProfile {
   dob?: string;
   gender?: "male" | "female" | "other";
   bloodGroup?: string;
+  height?: string;
+  weight?: string;
+  bloodPressure?: string;
   allergies?: string;
   medicalHistory?: string;
   currentMedications?: string;

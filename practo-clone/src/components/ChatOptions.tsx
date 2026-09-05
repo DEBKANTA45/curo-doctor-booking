@@ -17,7 +17,7 @@ export default function ChatOptions({
   onNavigate,
 }: ChatOptionsProps) {
   return (
-    <section aria-label="Quick chat actions" className="border-t border-line bg-bg px-3 py-3">
+       <section aria-label="Quick chat actions" className="border-t border-line bg-brand-gradient-soft px-3 py-3">
       <p className="mb-2 text-xs font-medium text-muted">Quick actions</p>
       <div className="flex flex-wrap gap-2" role="group" aria-label="Suggested questions">
         {prompts.map((prompt) => (
@@ -26,7 +26,7 @@ export default function ChatOptions({
             type="button"
             disabled={disabled}
             onClick={() => onSelect(prompt.text)}
-            className="rounded-full border border-line bg-surface px-3 py-1.5 text-left text-xs font-medium text-primary-dark transition-[background-color,border-color,transform] duration-150 ease-out hover:border-primary hover:bg-primary-light active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-full border border-transparent bg-cyan-light px-3 py-1.5 text-left text-xs font-medium text-cyan-dark transition-[background-color,color,transform] duration-150 ease-out hover:bg-primary-light hover:text-primary-dark active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {prompt.label}
           </button>
@@ -37,17 +37,17 @@ export default function ChatOptions({
         <div className="mt-3 flex items-center justify-between gap-3 border-t border-line pt-3">
           <p className="text-xs leading-5 text-muted">Sign in for appointment and account help.</p>
           <div className="flex shrink-0 gap-2">
-            <Link
+                       <Link
               href="/login"
               onClick={onNavigate}
-              className="rounded-sm bg-primary px-2.5 py-1.5 text-xs font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-primary-dark active:scale-[0.97]"
+              className="rounded-full bg-brand-gradient px-2.5 py-1.5 text-xs font-medium text-white shadow-sm transition-[transform,filter] duration-150 ease-out hover:brightness-[1.06] active:scale-[0.97]"
             >
               Patient
             </Link>
             <Link
               href="/doctor/login"
               onClick={onNavigate}
-              className="rounded-sm border border-line bg-surface px-2.5 py-1.5 text-xs font-medium text-ink transition-[transform,border-color,background-color] duration-150 ease-out hover:border-primary hover:bg-primary-light active:scale-[0.97]"
+              className="rounded-full border border-line bg-surface px-2.5 py-1.5 text-xs font-medium text-ink transition-[transform,border-color,background-color] duration-150 ease-out hover:border-primary hover:bg-primary-light active:scale-[0.97]"
             >
               Doctor
             </Link>

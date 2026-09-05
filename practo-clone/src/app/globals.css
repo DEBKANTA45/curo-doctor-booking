@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-
 :root {
   color-scheme: light;
   font-size: 18px;
@@ -13,24 +12,106 @@ html {
 }
 
 body {
-  background-color: #fafafa;
-  color: #111827;
+  background-color: #f6f9fc;
+  color: #0f172a;
   line-height: 1.6;
 }
 
-h1, h2, h3 {
-  line-height: 1.25;
+h1,
+h2,
+h3 {
+  line-height: 1.2;
 }
 
 .font-tabular {
   font-variant-numeric: tabular-nums;
 }
 
+/* ---------- Reusable component classes ---------- */
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md text-sm font-semibold transition-[background-color,color,border-color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply btn bg-brand-gradient text-white shadow-glow hover:brightness-[1.06];
+  }
+
+  .btn-secondary {
+    @apply btn border border-line bg-surface text-ink shadow-card hover:border-primary/40 hover:bg-primary-light hover:text-primary-dark;
+  }
+
+  .btn-ghost {
+    @apply btn text-ink hover:bg-primary-light hover:text-primary-dark;
+  }
+
+  .btn-danger {
+    @apply btn bg-accent text-white shadow-sm hover:bg-red-700;
+  }
+
+  .btn-sm {
+    @apply px-3 py-2 text-xs;
+  }
+
+  .btn-md {
+    @apply px-5 py-2 text-sm;
+  }
+
+  .btn-lg {
+    @apply px-6 py-3 text-sm;
+  }
+
+  .card {
+    @apply rounded-lg border border-line bg-surface shadow-card;
+  }
+
+  .card-hover {
+    @apply transition-[box-shadow,border-color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-card-hover;
+  }
+
+  .field {
+    @apply w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink outline-none transition-colors duration-150 placeholder:text-faint focus:border-primary focus:ring-2 focus:ring-primary/15;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium;
+  }
+
+  .badge-primary {
+    @apply badge bg-primary-light text-primary-dark;
+  }
+
+  .badge-cyan {
+    @apply badge bg-cyan-light text-cyan-dark;
+  }
+
+  .badge-success {
+    @apply badge bg-success-light text-success;
+  }
+
+  .badge-accent {
+    @apply badge bg-accent-light text-accent;
+  }
+
+  .section-eyebrow {
+    @apply text-xs font-semibold uppercase tracking-wide text-primary;
+  }
+
+  .icon-tile {
+    @apply flex h-10 w-10 items-center justify-center rounded-md bg-brand-gradient text-white shadow-sm;
+  }
+
+  .icon-tile-soft {
+    @apply flex h-10 w-10 items-center justify-center rounded-md bg-primary-light text-primary-dark;
+  }
+}
+
 .chat-typing-dot {
   width: 0.3125rem;
   height: 0.3125rem;
   border-radius: 9999px;
-  background-color: #6b7280;
+  background-color: #64748b;
   animation: chat-typing-dot 540ms cubic-bezier(0.23, 1, 0.32, 1) infinite;
 }
 
@@ -57,12 +138,12 @@ h1, h2, h3 {
 }
 
 ::selection {
-  background-color: #eef2ff;
-  color: #4338ca;
+  background-color: #dbeafe;
+  color: #1d4ed8;
 }
 
 :focus-visible {
-  outline: 2px solid #4f46e5;
+  outline: 2px solid #2563eb;
   outline-offset: 2px;
 }
 
@@ -71,7 +152,7 @@ h1, h2, h3 {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
-    scroll-behavior: auto !important;
+    scroll-behavior: auto;
   }
 
   .chat-typing-dot {
@@ -84,7 +165,39 @@ h1, h2, h3 {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* ---------- ECG / heartbeat transition (post login, signup & logout) ---------- */
+
+.animate-ecg-fade-in {
+  animation: ecg-fade-in 200ms ease-out;
+}
+
+@keyframes ecg-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.ecg-draw {
+  animation: ecg-draw 1100ms ease-out infinite;
+}
+
+@keyframes ecg-draw {
+  0% {
+    stroke-dashoffset: var(--ecg-len, 1600);
+  }
+  65% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
 }
