@@ -13,7 +13,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { Appointment } from "@/lib/types";
 import { getAppointmentsForDoctor, getPatientsForDoctor, getAllDoctors, getRatingSummary } from "@/lib/mock-db";
-import MiniBarChart from "@/components/MiniBarChart";
+import MiniBarChart from "@/components/miniBarChart";
 
 function monthKey(iso: string) {
   const d = new Date(iso);
