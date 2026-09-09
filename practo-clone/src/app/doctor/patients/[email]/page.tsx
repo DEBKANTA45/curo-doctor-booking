@@ -5,12 +5,8 @@ import Link from "next/link";
 import { ChevronLeft, User, History, Phone, Cake, Droplet, Activity, Ruler, Weight, ShieldAlert, ClipboardList, Pill, Contact } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { findPatientForDoctor, getPatientProfile } from "@/lib/mock-db";
+import { formatDate } from "@/lib/utils";
 
-function formatDate(iso: string) {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
-}
 
 function DetailRow({
   icon: Icon,

@@ -5,13 +5,8 @@ import Link from "next/link";
 import { MessageSquare, Star } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { getAllDoctors, getAllReviewsForDoctor, getRatingSummary } from "@/lib/mock-db";
-import { Review } from "@/lib/types";
-
-function formatDate(iso: string) {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
-}
+import { Doctor, Review } from "@/lib/types";
+import { formatDate } from "@/lib/utils";
 
 function StarRow({ rating, size = 12 }: { rating: number; size?: number }) {
   return (
@@ -31,15 +26,12 @@ function StarRow({ rating, size = 12 }: { rating: number; size?: number }) {
 export default function DoctorFeedbackPage() {
   const { account, loading } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
-
-  const doctorRecord = useMemo(
-    () => (account?.role === "doctor" ? getAllDoctors().find((d) => d.id === account.doctorId) : undefined),
-    [account]
-  );
+  const [doctorRecord, setDoctorRecord] = useState<Doctor | undefined>(undefined);
 
   useEffect(() => {
     if (account?.role === "doctor") {
       setReviews(getAllReviewsForDoctor(account.doctorId));
+      setDoctorRecord(getAllDoctors().find((d) => d.id === account.doctorId));
     }
   }, [account]);
 

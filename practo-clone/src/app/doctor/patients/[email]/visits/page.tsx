@@ -6,12 +6,8 @@ import { ChevronLeft, ChevronDown, ChevronUp, ChevronRight, Calendar, Download }
 import { useAuth } from "@/context/AuthContext";
 import { findPatientForDoctor, getVisitHistoryForDoctorAndPatient } from "@/lib/mock-db";
 import { downloadPrescriptionPdf } from "@/lib/prescription-pdf";
+import { formatDate } from "@/lib/utils";
 
-function formatDate(iso: string) {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
-}
 
 export default function VisitHistoryPage({ params }: { params: { email: string } }) {
   const { account, loading } = useAuth();

@@ -18,6 +18,13 @@ export function getReviewsForDoctor(doctorId: string): Review[] {
 export function cn(...classes: (string | false | undefined | null)[]) {
   return classes.filter(Boolean).join(" ");
 }
+// Formats an ISO date string as e.g. "9 Sep 2026". Falls back to the raw
+// string if it isn't a valid date.
+export function formatDate(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
 
 // Turns a start time, end time, and per-patient duration into a list of
 // 12-hour formatted slot labels, e.g. "10:00"–"11:00" at 20 min → 3 slots.

@@ -5,12 +5,7 @@ import Link from "next/link";
 import { Search, User, ChevronRight, History } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { getPatientsForDoctor } from "@/lib/mock-db";
-
-function formatDate(iso: string) {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
-}
+import { formatDate } from "@/lib/utils";
 
 export default function DoctorPatientsPage() {
   const { account, loading } = useAuth();

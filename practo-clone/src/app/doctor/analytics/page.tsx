@@ -11,8 +11,14 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { Appointment } from "@/lib/types";
-import { getAppointmentsForDoctor, getPatientsForDoctor, getAllDoctors, getRatingSummary } from "@/lib/mock-db";
+import { Appointment, Doctor } from "@/lib/types";
+import {
+  getAppointmentsForDoctor,
+  getPatientsForDoctor,
+  getAllDoctors,
+  getRatingSummary,
+  DoctorPatientSummary,
+} from "@/lib/mock-db";
 import MiniBarChart from "@/components/miniBarChart";
 
 function monthKey(iso: string) {
@@ -29,22 +35,16 @@ function monthLabel(key: string) {
 export default function DoctorAnalyticsPage() {
   const { account, loading } = useAuth();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [patients, setPatients] = useState<DoctorPatientSummary[]>([]);
+  const [doctorRecord, setDoctorRecord] = useState<Doctor | undefined>(undefined);
 
   useEffect(() => {
     if (account?.role === "doctor") {
       setAppointments(getAppointmentsForDoctor(account.name));
+      setPatients(getPatientsForDoctor(account.name));
+      setDoctorRecord(getAllDoctors().find((d) => d.id === account.doctorId));
     }
   }, [account]);
-
-  const patients = useMemo(
-    () => (account?.role === "doctor" ? getPatientsForDoctor(account.name) : []),
-    [account]
-  );
-
-  const doctorRecord = useMemo(
-    () => (account?.role === "doctor" ? getAllDoctors().find((d) => d.id === account.doctorId) : undefined),
-    [account]
-  );
 
   const ratingSummary = useMemo(
     () => (doctorRecord ? getRatingSummary(doctorRecord) : null),

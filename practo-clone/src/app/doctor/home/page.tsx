@@ -11,7 +11,7 @@ import {
   User,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { Appointment } from "@/lib/types";
+import { Appointment, Doctor } from "@/lib/types";
 import { getAllDoctors, getAppointmentsForDoctor } from "@/lib/mock-db";
 
 function todayIso() {
@@ -43,10 +43,12 @@ const quickLinks = [
 export default function DoctorHomePage() {
   const { account, loading } = useAuth();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [doctorRecord, setDoctorRecord] = useState<Doctor | undefined>(undefined);
 
   useEffect(() => {
     if (account?.role === "doctor") {
       setAppointments(getAppointmentsForDoctor(account.name));
+      setDoctorRecord(getAllDoctors().find((d) => d.id === account.doctorId));
     }
   }, [account]);
 
@@ -57,11 +59,6 @@ export default function DoctorHomePage() {
   );
   const totalPending = useMemo(() => appointments.filter((a) => a.status === "upcoming").length, [appointments]);
   const totalCompleted = useMemo(() => appointments.filter((a) => a.status === "completed").length, [appointments]);
-
-  const doctorRecord = useMemo(
-    () => (account?.role === "doctor" ? getAllDoctors().find((d) => d.id === account.doctorId) : undefined),
-    [account]
-  );
 
   if (loading) return null;
 
