@@ -301,13 +301,32 @@ export function createAppointment(
   return full;
 }
 
-export function cancelAppointment(id: string) {
+export function cancelAppointment(id: string, cancelledBy: "patient" | "doctor" = "patient") {
+  const appt = getAppointmentById(id);
   const all = getAppointments().map((a) =>
     a.id === id ? { ...a, status: "cancelled" as const } : a
   );
   write(APPOINTMENTS_KEY, all);
-}
 
+  if (!appt) return;
+
+  if (cancelledBy === "patient") {
+    const doctorAccount = getAccounts().find(
+      (a) => a.role === "doctor" && a.doctorId === appt.doctorId
+    );
+    if (doctorAccount) {
+      addNotification(
+        doctorAccount.email,
+        `${appt.patientName} cancelled their appointment on ${appt.date} at ${appt.time}.`
+      );
+    }
+  } else {
+    addNotification(
+      appt.patientEmail,
+      `${appt.doctorName} cancelled your appointment on ${appt.date} at ${appt.time}.`
+    );
+  }
+}
 export function rescheduleAppointment(id: string, newDate: string): Appointment | null {
   const all = getAppointments();
   const index = all.findIndex((a) => a.id === id);

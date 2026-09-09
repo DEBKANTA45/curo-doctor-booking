@@ -82,7 +82,7 @@ export default function AppointmentsPage() {
   };
 
   const handleCancel = (id: string) => {
-    cancelAppointment(id);
+    cancelAppointment(id, "patient");
     if (account?.role === "patient") {
       setAppointments(getAppointmentsForPatient(account.email));
     }

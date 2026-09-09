@@ -5,7 +5,13 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Menu, X, Stethoscope, ChevronDown, Bell } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { getUnreadNotificationCount } from "@/lib/mock-db";
+import { Notification } from "@/lib/types";
+import {
+  getUnreadNotificationCount,
+  getNotifications,
+  markAllNotificationsRead,
+  dismissNotification,
+} from "@/lib/mock-db";
 import EcgOverlay from "@/components/EcgOverlay";
 
 const patientLinks = [
@@ -16,13 +22,6 @@ const patientLinks = [
 const signedInPatientLinks = [
   ...patientLinks,
   { href: "/appointments", label: "Appointments" },
-];
-
-// On /doctor/home there is no sidebar, so the navbar carries the full set of links.
-const doctorHomeLinks = [
-  { href: "/doctor/dashboard", label: "Dashboard" },
-  { href: "/doctor/feedback", label: "Feedback" },
-  { href: "/doctor/analytics", label: "Analytics" },
 ];
 
 
@@ -43,6 +42,9 @@ export default function Navbar() {
   const router = useRouter();
   const [unread, setUnread] = useState(0);
   const [showLogoutEcg, setShowLogoutEcg] = useState(false);
+  const [doctorNotifOpen, setDoctorNotifOpen] = useState(false);
+  const [doctorNotifications, setDoctorNotifications] = useState<Notification[]>([]);
+  const doctorNotifRef = useRef<HTMLDivElement>(null);
 
  const isDoctor = account?.role === "doctor";
 const navLinks = isDoctor
@@ -52,13 +54,39 @@ const navLinks = isDoctor
   : patientLinks;
   const logoHref = isDoctor ? "/doctor/home" : "/";
 
-  useEffect(() => {
-    if (account?.role === "patient") {
+   useEffect(() => {
+    if (account?.role === "patient" || account?.role === "doctor") {
       setUnread(getUnreadNotificationCount(account.email));
     } else {
       setUnread(0);
     }
   }, [account, pathname]);
+
+  useEffect(() => {
+    if (!doctorNotifOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (doctorNotifRef.current && !doctorNotifRef.current.contains(e.target as Node)) {
+        setDoctorNotifOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [doctorNotifOpen]);
+
+  const toggleDoctorNotifications = () => {
+    if (account?.role !== "doctor") return;
+    if (!doctorNotifOpen) {
+      setDoctorNotifications(getNotifications(account.email));
+      markAllNotificationsRead(account.email);
+      setUnread(0);
+    }
+    setDoctorNotifOpen((v) => !v);
+  };
+
+  const handleDismissDoctorNotification = (id: string) => {
+    dismissNotification(id);
+    setDoctorNotifications((prev) => prev.filter((n) => n.id !== id));
+  };
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -118,7 +146,7 @@ const navLinks = isDoctor
         <div className="hidden items-center gap-2 md:flex">
           {account ? (
             <div className="flex items-center gap-2">
-              {account.role === "patient" && (
+                            {account.role === "patient" && (
                 <Link
                   href="/appointments"
                   className="relative flex h-10 w-10 items-center justify-center rounded-md border border-line text-muted transition-[border-color,color,background-color,transform] duration-150 ease-out hover:border-primary hover:bg-primary-light hover:text-primary-dark active:scale-[0.97]"
@@ -131,6 +159,48 @@ const navLinks = isDoctor
                     </span>
                   )}
                 </Link>
+              )}
+              {account.role === "doctor" && (
+                <div className="relative" ref={doctorNotifRef}>
+                  <button
+                    onClick={toggleDoctorNotifications}
+                    className="relative flex h-10 w-10 items-center justify-center rounded-md border border-line text-muted transition-[border-color,color,background-color,transform] duration-150 ease-out hover:border-primary hover:bg-primary-light hover:text-primary-dark active:scale-[0.97]"
+                    aria-label="Notifications"
+                  >
+                    <Bell size={16} />
+                    {unread > 0 && (
+                      <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-medium text-white">
+                        {unread}
+                      </span>
+                    )}
+                  </button>
+                  {doctorNotifOpen && (
+                    <div className="absolute right-0 mt-2 w-80 origin-top-right rounded-md border border-line bg-surface p-2 shadow-soft">
+                      <p className="px-2 py-1.5 text-xs font-medium text-muted">Notifications</p>
+                      {doctorNotifications.length === 0 ? (
+                        <p className="px-2 py-4 text-center text-sm text-muted">No notifications yet.</p>
+                      ) : (
+                        <div className="flex max-h-80 flex-col gap-1 overflow-y-auto">
+                          {doctorNotifications.map((n) => (
+                            <div
+                              key={n.id}
+                              className="flex items-start justify-between gap-2 rounded-sm px-2 py-2 text-sm text-ink hover:bg-bg"
+                            >
+                              <span>{n.message}</span>
+                              <button
+                                onClick={() => handleDismissDoctorNotification(n.id)}
+                                className="shrink-0 text-faint hover:text-ink"
+                                aria-label="Dismiss notification"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
               <div className="relative" ref={menuRef}>
                 <button
