@@ -5,6 +5,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ChatBot from "@/components/ChatBot";
 import { AuthProvider } from "@/context/AuthContext";
+import PageLoadAnimation from "@/components/PageLoadAnimation";
+import { Toaster } from "react-hot-toast";
 
 const sora = Sora({
   subsets: ["latin"],
@@ -33,10 +35,13 @@ export default function RootLayout({
     <html lang="en" className={`${sora.variable} ${inter.variable}`}>
       <body className="flex min-h-screen flex-col font-sans">
         <AuthProvider>
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
-          <ChatBot />
+          <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
+          <PageLoadAnimation>
+            <Navbar />
+            <main className="flex-1">{children}</main>
+            <Footer />
+            <ChatBot />
+          </PageLoadAnimation>
         </AuthProvider>
       </body>
     </html>

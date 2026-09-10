@@ -8,6 +8,7 @@ import { login } from "@/lib/mock-db";
 import { useAuth } from "@/context/AuthContext";
 import { PatientLoginIllustration } from "@/components/illustrations/AuthIllustrations";
 import EcgOverlay from "@/components/EcgOverlay";
+import toast from "react-hot-toast";
 
 const points = [
   "Book verified doctors across specialties",
@@ -32,8 +33,10 @@ export default function LoginForm() {
     const result = login(email, password, "patient");
     if (!result.ok) {
       setError(result.error ?? "Something went wrong.");
+      toast.error(result.error ?? "Login failed.");
       return;
     }
+    toast.success("Logged in successfully!");
     refresh();
     setShowEcg(true);
   };
@@ -64,6 +67,7 @@ export default function LoginForm() {
                     className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-faint"
                   />
                   <input
+                    autoComplete="email"
                     id="email"
                     type="email"
                     required
@@ -84,6 +88,7 @@ export default function LoginForm() {
                     className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-faint"
                   />
                   <input
+                    autoComplete="current-password"
                     id="password"
                     type={showPassword ? "text" : "password"}
                     required

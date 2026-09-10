@@ -22,6 +22,7 @@ import { registerDoctor } from "@/lib/mock-db";
 import { useAuth } from "@/context/AuthContext";
 import { DoctorRegisterIllustration } from "@/components/illustrations/AuthIllustrations";
 import EcgOverlay from "@/components/EcgOverlay";
+import toast from "react-hot-toast";
 
 const points = [
   "List your practice in minutes",
@@ -65,8 +66,10 @@ export default function DoctorRegisterForm() {
     });
     if (!result.ok) {
       setError(result.error ?? "Something went wrong.");
+       toast.error(result.error ?? "Registration failed.");
       return;
     }
+    toast.success("Account created successfully!");
     refresh();
     setShowEcg(true);
   };
@@ -236,6 +239,7 @@ export default function DoctorRegisterForm() {
                       className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-faint"
                     />
                     <input
+                    autoComplete="email"
                       id="email"
                       type="email"
                       required
@@ -257,6 +261,7 @@ export default function DoctorRegisterForm() {
                       className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-faint"
                     />
                     <input
+                    autoComplete="new-password"
                       id="password"
                       type={showPassword ? "text" : "password"}
                       required

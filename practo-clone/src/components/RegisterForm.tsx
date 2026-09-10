@@ -8,7 +8,7 @@ import { registerPatient } from "@/lib/mock-db";
 import { useAuth } from "@/context/AuthContext";
 import { PatientRegisterIllustration } from "@/components/illustrations/AuthIllustrations";
 import EcgOverlay from "@/components/EcgOverlay";
-
+import toast from "react-hot-toast";
 const points = [
   "Compare doctors by fee, experience, and rating",
   "Book a visit in under two minutes",
@@ -32,10 +32,13 @@ export default function RegisterForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const result = registerPatient({ name, email, phone, password });
+   
     if (!result.ok) {
       setError(result.error ?? "Something went wrong.");
+      toast.error(result.error ?? "Registration failed.");
       return;
     }
+     toast.success("Account created successfully!");
     refresh();
     setShowEcg(true);
   };
@@ -85,6 +88,7 @@ export default function RegisterForm() {
                     className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-faint"
                   />
                   <input
+                  autoComplete="email"
                     id="email"
                     type="email"
                     required
@@ -124,6 +128,7 @@ export default function RegisterForm() {
                     className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-faint"
                   />
                   <input
+                  autoComplete="new-password"
                     id="password"
                     type={showPassword ? "text" : "password"}
                     required

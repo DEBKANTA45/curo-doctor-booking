@@ -8,7 +8,7 @@ import { login } from "@/lib/mock-db";
 import { useAuth } from "@/context/AuthContext";
 import { DoctorLoginIllustration } from "@/components/illustrations/AuthIllustrations";
 import EcgOverlay from "@/components/EcgOverlay";
-
+import toast from "react-hot-toast";
 const points = [
   "Manage your appointment requests",
   "Update your schedule anytime",
@@ -29,11 +29,13 @@ export default function DoctorLoginForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const result = login(email, password, "doctor");
+    const result = login(email, password, "patient");
     if (!result.ok) {
       setError(result.error ?? "Something went wrong.");
+      toast.error(result.error ?? "Login failed.");
       return;
     }
+    toast.success("Logged in successfully!");
     refresh();
     setShowEcg(true);
   };
@@ -64,6 +66,7 @@ export default function DoctorLoginForm() {
                     className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-faint"
                   />
                   <input
+                    autoComplete="email"
                     id="email"
                     type="email"
                     required
@@ -84,6 +87,7 @@ export default function DoctorLoginForm() {
                     className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-faint"
                   />
                   <input
+                    autoComplete="current-password"
                     id="password"
                     type={showPassword ? "text" : "password"}
                     required
