@@ -8,7 +8,7 @@ import { login } from "@/lib/mock-db";
 import { useAuth } from "@/context/AuthContext";
 import { DoctorLoginIllustration } from "@/components/illustrations/AuthIllustrations";
 import EcgOverlay from "@/components/EcgOverlay";
-import toast from "react-hot-toast";
+
 const points = [
   "Manage your appointment requests",
   "Update your schedule anytime",
@@ -32,10 +32,8 @@ export default function DoctorLoginForm() {
     const result = login(email, password, "doctor");
     if (!result.ok) {
       setError(result.error ?? "Something went wrong.");
-      toast.error(result.error ?? "Login failed.");
       return;
     }
-    toast.success("Logged in successfully!");
     refresh();
     setShowEcg(true);
   };
@@ -45,13 +43,32 @@ export default function DoctorLoginForm() {
       <div className="grid overflow-hidden rounded-lg border border-line bg-surface shadow-sm lg:min-h-[620px] lg:grid-cols-2 lg:shadow-md">
         <div className="flex items-center justify-center px-6 py-12 sm:px-10 sm:py-14">
           <div className="w-full max-w-sm">
-            <span className="inline-block rounded-full bg-primary-light px-3 py-1 text-xs font-medium text-primary-dark">
-              Doctor portal
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="inline-block rounded-full bg-primary-light px-3 py-1 text-xs font-medium text-primary-dark">
+                Doctor portal
+              </span>
+              <div className="inline-flex items-center gap-1 rounded-md border border-line bg-bg p-1">
+                <Link
+                  href="/login"
+                  className="rounded-sm px-3 py-1 text-xs font-medium text-muted transition-colors hover:text-ink"
+                >
+                  Patient
+                </Link>
+                <span className="rounded-sm bg-surface px-3 py-1 text-xs font-medium text-primary shadow-card">
+                  Doctor
+                </span>
+              </div>
+            </div>
             <h1 className="mt-4 font-display text-2xl font-semibold text-ink">
               Log in to your practice
             </h1>
             <p className="mt-1.5 text-sm text-muted">
+              New here?{" "}
+              <Link href="/doctor/register" className="font-medium text-primary hover:text-primary-dark">
+                Register your practice
+              </Link>
+            </p>
+            <p className="mt-1 text-sm text-muted">
               Manage your appointments and patient bookings.
             </p>
 
@@ -66,7 +83,6 @@ export default function DoctorLoginForm() {
                     className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-faint"
                   />
                   <input
-                    autoComplete="email"
                     id="email"
                     type="email"
                     required
@@ -78,16 +94,20 @@ export default function DoctorLoginForm() {
                 </div>
               </div>
               <div>
-                <label htmlFor="password" className="text-sm font-medium text-ink">
-                  Password
-                </label>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="password" className="text-sm font-medium text-ink">
+                    Password
+                  </label>
+                  <Link href="/forgot-password" className="text-xs font-medium text-primary hover:text-primary-dark">
+                    Forgot password?
+                  </Link>
+                </div>
                 <div className="relative mt-1.5">
                   <Lock
                     size={16}
                     className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-faint"
                   />
                   <input
-                    autoComplete="current-password"
                     id="password"
                     type={showPassword ? "text" : "password"}
                     required
@@ -116,19 +136,6 @@ export default function DoctorLoginForm() {
                 Log in
               </button>
             </form>
-
-            <p className="mt-6 text-center text-sm text-muted">
-              New to Curo?{" "}
-              <Link href="/doctor/register" className="font-medium text-primary hover:text-primary-dark">
-                Register your practice
-              </Link>
-            </p>
-            <p className="mt-2 text-center text-sm text-muted">
-              Looking to book a visit instead?{" "}
-              <Link href="/login" className="font-medium text-primary hover:text-primary-dark">
-                Patient login
-              </Link>
-            </p>
           </div>
         </div>
 
