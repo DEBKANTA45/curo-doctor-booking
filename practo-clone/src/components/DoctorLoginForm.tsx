@@ -29,7 +29,7 @@ export default function DoctorLoginForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const result = login(email, password, "patient");
+    const result = login(email, password, "doctor");
     if (!result.ok) {
       setError(result.error ?? "Something went wrong.");
       toast.error(result.error ?? "Login failed.");
