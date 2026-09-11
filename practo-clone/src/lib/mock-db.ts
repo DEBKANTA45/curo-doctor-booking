@@ -447,3 +447,64 @@ export function getRatingSummary(doctor: Doctor): { rating: number; reviewCount:
 
   return { rating, reviewCount: totalCount };
 }
+
+
+// ---------- Password reset ----------
+
+const RESET_TOKENS_KEY = "curo_reset_tokens";
+
+interface ResetToken {
+  email: string;
+  code: string;
+  expiresAt: number;
+}
+
+function generateResetCode(): string {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+// Starts a password reset for the given email. In a real app the code
+// below would be emailed to the user; since this app has no email backend,
+// the code is returned directly so the UI can display it (clearly labeled
+// as a demo stand-in for an email).
+export function requestPasswordReset(email: string): { ok: boolean; error?: string; code?: string } {
+  const target = email.trim().toLowerCase();
+  const account = findAccountByEmail(target);
+  if (!account) {
+    return { ok: false, error: "No account found with this email." };
+  }
+  const tokens = read<ResetToken[]>(RESET_TOKENS_KEY, []).filter((t) => t.email !== target);
+  const code = generateResetCode();
+  tokens.push({ email: target, code, expiresAt: Date.now() + 10 * 60 * 1000 });
+  write(RESET_TOKENS_KEY, tokens);
+  return { ok: true, code };
+}
+
+// Verifies the reset code and sets a new password if valid and unexpired.
+export function resetPassword(
+  email: string,
+  code: string,
+  newPassword: string
+): { ok: boolean; error?: string } {
+  const target = email.trim().toLowerCase();
+  const tokens = read<ResetToken[]>(RESET_TOKENS_KEY, []);
+  const match = tokens.find((t) => t.email === target && t.code === code.trim());
+  if (!match) {
+    return { ok: false, error: "Invalid or incorrect reset code." };
+  }
+  if (Date.now() > match.expiresAt) {
+    return { ok: false, error: "This reset code has expired. Please request a new one." };
+  }
+  const accounts = getAccounts();
+  const index = accounts.findIndex((a) => a.email.trim().toLowerCase() === target);
+  if (index === -1) {
+    return { ok: false, error: "No account found with this email." };
+  }
+  accounts[index] = { ...accounts[index], password: newPassword };
+  write(ACCOUNTS_KEY, accounts);
+  write(
+    RESET_TOKENS_KEY,
+    tokens.filter((t) => !(t.email === target && t.code === code.trim()))
+  );
+  return { ok: true };
+}

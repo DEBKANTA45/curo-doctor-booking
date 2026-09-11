@@ -8,7 +8,6 @@ import { login } from "@/lib/mock-db";
 import { useAuth } from "@/context/AuthContext";
 import { PatientLoginIllustration } from "@/components/illustrations/AuthIllustrations";
 import EcgOverlay from "@/components/EcgOverlay";
-import toast from "react-hot-toast";
 
 const points = [
   "Book verified doctors across specialties",
@@ -33,10 +32,8 @@ export default function LoginForm() {
     const result = login(email, password, "patient");
     if (!result.ok) {
       setError(result.error ?? "Something went wrong.");
-      toast.error(result.error ?? "Login failed.");
       return;
     }
-    toast.success("Logged in successfully!");
     refresh();
     setShowEcg(true);
   };
@@ -46,13 +43,32 @@ export default function LoginForm() {
       <div className="grid overflow-hidden rounded-lg border border-line bg-surface shadow-sm lg:min-h-[620px] lg:grid-cols-2 lg:shadow-md">
         <div className="flex items-center justify-center px-6 py-12 sm:px-10 sm:py-14">
           <div className="w-full max-w-sm">
-            <span className="flex h-11 w-11 items-center justify-center rounded-md bg-primary-light text-primary">
-              <LogIn size={20} />
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="flex h-11 w-11 items-center justify-center rounded-md bg-primary-light text-primary">
+                <LogIn size={20} />
+              </span>
+              <div className="inline-flex items-center gap-1 rounded-md border border-line bg-bg p-1">
+                <span className="rounded-sm bg-surface px-3 py-1 text-xs font-medium text-primary shadow-card">
+                  Patient
+                </span>
+                <Link
+                  href="/doctor/login"
+                  className="rounded-sm px-3 py-1 text-xs font-medium text-muted transition-colors hover:text-ink"
+                >
+                  Doctor
+                </Link>
+              </div>
+            </div>
             <h1 className="mt-5 font-display text-2xl font-semibold text-ink">
               Log in to Curo
             </h1>
             <p className="mt-1.5 text-sm text-muted">
+              New here?{" "}
+              <Link href="/register" className="font-medium text-primary hover:text-primary-dark">
+                Create an account
+              </Link>
+            </p>
+            <p className="mt-1 text-sm text-muted">
               Book appointments and manage your visits.
             </p>
 
@@ -67,7 +83,6 @@ export default function LoginForm() {
                     className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-faint"
                   />
                   <input
-                    autoComplete="email"
                     id="email"
                     type="email"
                     required
@@ -79,16 +94,20 @@ export default function LoginForm() {
                 </div>
               </div>
               <div>
+              <div className="flex items-center justify-between">
                 <label htmlFor="password" className="text-sm font-medium text-ink">
                   Password
                 </label>
+                <Link href="/forgot-password" className="text-xs font-medium text-primary hover:text-primary-dark">
+                  Forgot password?
+                </Link>
+              </div>
                 <div className="relative mt-1.5">
                   <Lock
                     size={16}
                     className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-faint"
                   />
                   <input
-                    autoComplete="current-password"
                     id="password"
                     type={showPassword ? "text" : "password"}
                     required
@@ -117,19 +136,6 @@ export default function LoginForm() {
                 Log in
               </button>
             </form>
-
-            <p className="mt-6 text-center text-sm text-muted">
-              New to Curo?{" "}
-              <Link href="/register" className="font-medium text-primary hover:text-primary-dark">
-                Create an account
-              </Link>
-            </p>
-            <p className="mt-2 text-center text-sm text-muted">
-              Are you a doctor?{" "}
-              <Link href="/doctor/login" className="font-medium text-primary hover:text-primary-dark">
-                Log in here
-              </Link>
-            </p>
           </div>
         </div>
 
