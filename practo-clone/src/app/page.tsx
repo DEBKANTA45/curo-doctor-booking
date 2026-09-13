@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, CalendarCheck, ClipboardList, Search, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, CalendarCheck, ClipboardList, Search, ShieldCheck, Sparkles, Star, Quote, Users, MapPin } from "lucide-react";
 import HomeSearch from "@/components/HomeSearch";
 import DoctorCard from "@/components/DoctorCard";
 import { doctors, specialties } from "@/lib/utils";
@@ -9,7 +9,41 @@ import { getSpecialtyIcon } from "@/lib/icon-map";
 import { useAuth } from "@/context/AuthContext";
 import { ClinicIllustration } from "@/components/illustrations/BrandIllustrations";
 
+import AnimatedCounter from "@/components/AnimatedCounter";
+
 const topDoctors = [...doctors].sort((a, b) => b.rating - a.rating).slice(0, 4);
+const cityCount = new Set(doctors.map((d) => d.city)).size;
+const avgRating = doctors.length
+  ? doctors.reduce((sum, d) => sum + d.rating, 0) / doctors.length
+  : 0;
+
+const stats = [
+  { icon: Users, value: doctors.length, suffix: "+", label: "Verified doctors" },
+  { icon: MapPin, value: cityCount, suffix: "+", label: "Cities covered" },
+  { icon: CalendarCheck, value: 10000, suffix: "+", label: "Appointments booked", useGrouping: true },
+  { icon: Star, value: avgRating, decimals: 1, suffix: "", label: "Average doctor rating" },
+];
+
+const testimonials = [
+  {
+    quote:
+      "Booking felt effortless — I could compare doctors by fee and rating before choosing, and the whole thing took less than five minutes.",
+    name: "Ananya R.",
+    context: "Booked a dermatologist visit",
+  },
+  {
+    quote:
+      "I liked being able to see my full appointment history and past prescriptions in one place instead of digging through old messages.",
+    name: "Vikram S.",
+    context: "Follow-up with a cardiologist",
+  },
+  {
+    quote:
+      "As someone who's usually anxious about doctor visits, seeing real ratings and reviews before booking made the decision so much easier.",
+    name: "Priya M.",
+    context: "First-time visit to a pediatrician",
+  },
+];
 
 const steps = [
   {
@@ -179,6 +213,53 @@ export default function HomePage() {
               <p className="mt-2 text-sm leading-relaxed text-muted">
                 {step.description}
               </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="border-y border-line bg-surface">
+        <div className="mx-auto max-w-content px-5 py-14">
+          <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
+            {stats.map((s) => (
+              <div key={s.label} className="text-center">
+                <span className="icon-tile-soft mx-auto">
+                  <s.icon size={18} />
+                </span>
+                <p className="mt-3 font-tabular text-2xl font-semibold text-ink sm:text-3xl">
+                  <AnimatedCounter
+                    value={s.value}
+                    suffix={s.suffix}
+                    decimals={"decimals" in s ? s.decimals : 0}
+                    useGrouping={"useGrouping" in s ? s.useGrouping : false}
+                  />
+                </p>
+                <p className="mt-1 text-xs text-muted sm:text-sm">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-content px-5 py-16">
+        <span className="section-eyebrow">Patient stories</span>
+        <h2 className="mt-1.5 font-display text-2xl font-semibold text-ink sm:text-3xl">
+          What patients are saying
+        </h2>
+        <div className="mt-8 grid gap-5 sm:grid-cols-3">
+          {testimonials.map((t) => (
+            <div key={t.name} className="card flex flex-col p-6">
+              <Quote size={20} className="text-primary/40" />
+              <p className="mt-3 flex-1 text-sm leading-relaxed text-ink/90">
+                "{t.quote}"
+              </p>
+              <div className="mt-5 flex items-center gap-1 text-accent">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} size={13} fill="currentColor" className="text-accent" />
+                ))}
+              </div>
+              <p className="mt-2 text-sm font-medium text-ink">{t.name}</p>
+              <p className="text-xs text-faint">{t.context}</p>
             </div>
           ))}
         </div>
