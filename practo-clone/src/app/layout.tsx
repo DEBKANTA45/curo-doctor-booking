@@ -54,7 +54,17 @@ export default function RootLayout({
       <body className="flex min-h-screen flex-col font-sans">
         <ThemeProvider>
           <AuthProvider>
-            <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
+            <Toaster
+              position="top-center"
+              toastOptions={{
+                duration: 3000,
+                style: {
+                  background: "rgb(var(--color-surface))",
+                  color: "rgb(var(--color-ink))",
+                  border: "1px solid rgb(var(--color-line))",
+                },
+              }}
+            />
             <PageLoadAnimation>
               <Navbar />
               <main className="flex-1">{children}</main>
