@@ -174,7 +174,7 @@ export default function RegisterForm() {
           </div>
         </div>
 
-        <div className="relative hidden overflow-hidden bg-gradient-to-br from-primary-light via-white to-primary-light lg:flex lg:flex-col lg:justify-center lg:border-l lg:border-line lg:px-14">
+        <div className="relative hidden overflow-hidden bg-gradient-to-br from-primary-light via-surface to-primary-light lg:flex lg:flex-col lg:justify-center lg:border-l lg:border-line lg:px-14">
           <div className="relative max-w-sm">
             <PatientRegisterIllustration className="mb-8 h-auto w-full max-w-[280px]" />
             <h2 className="font-display text-xl font-medium leading-snug text-ink">

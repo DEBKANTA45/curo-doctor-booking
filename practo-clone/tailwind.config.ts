@@ -1,34 +1,35 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     extend: {
       colors: {
-        bg: "#F6F9FC",
-        surface: "#FFFFFF",
-        ink: "#0F172A",
-        muted: "#64748B",
-        faint: "#94A3B8",
-        line: "#E2E8F0",
+        bg: "rgb(var(--color-bg) / <alpha-value>)",
+        surface: "rgb(var(--color-surface) / <alpha-value>)",
+        ink: "rgb(var(--color-ink) / <alpha-value>)",
+        muted: "rgb(var(--color-muted) / <alpha-value>)",
+        faint: "rgb(var(--color-faint) / <alpha-value>)",
+        line: "rgb(var(--color-line) / <alpha-value>)",
         primary: {
-          DEFAULT: "#2563EB",
-          dark: "#1D4ED8",
-          darker: "#1E3A8A",
-          light: "#EFF6FF",
+          DEFAULT: "rgb(var(--color-primary) / <alpha-value>)",
+          dark: "rgb(var(--color-primary-dark) / <alpha-value>)",
+          darker: "rgb(var(--color-primary-darker) / <alpha-value>)",
+          light: "rgb(var(--color-primary-light) / <alpha-value>)",
         },
         cyan: {
-          DEFAULT: "#06B6D4",
-          dark: "#0E7490",
-          light: "#ECFEFF",
+          DEFAULT: "rgb(var(--color-cyan) / <alpha-value>)",
+          dark: "rgb(var(--color-cyan-dark) / <alpha-value>)",
+          light: "rgb(var(--color-cyan-light) / <alpha-value>)",
         },
         accent: {
-          DEFAULT: "#DC2626",
-          light: "#FEF2F2",
+          DEFAULT: "rgb(var(--color-accent) / <alpha-value>)",
+          light: "rgb(var(--color-accent-light) / <alpha-value>)",
         },
         success: {
-          DEFAULT: "#059669",
-          light: "#ECFDF5",
+          DEFAULT: "rgb(var(--color-success) / <alpha-value>)",
+          light: "rgb(var(--color-success-light) / <alpha-value>)",
         },
       },
       fontFamily: {
@@ -53,7 +54,7 @@ const config: Config = {
       },
       backgroundImage: {
         "brand-gradient": "linear-gradient(135deg, #2563EB 0%, #0EA5E9 55%, #06B6D4 100%)",
-        "brand-gradient-soft": "linear-gradient(135deg, #EFF6FF 0%, #ECFEFF 100%)",
+        "brand-gradient-soft": "linear-gradient(135deg, rgb(var(--color-primary-light)) 0%, rgb(var(--color-cyan-light)) 100%)",
         "hero-radial":
           "radial-gradient(60% 60% at 15% 20%, rgba(37,99,235,0.10) 0%, rgba(37,99,235,0) 60%), radial-gradient(50% 50% at 90% 10%, rgba(6,182,212,0.12) 0%, rgba(6,182,212,0) 60%)",
       },
