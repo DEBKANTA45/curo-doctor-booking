@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ChatBot from "@/components/ChatBot";
 import { AuthProvider } from "@/context/AuthContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import PageLoadAnimation from "@/components/PageLoadAnimation";
 import { Toaster } from "react-hot-toast";
 
@@ -33,16 +34,35 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${sora.variable} ${inter.variable}`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function () {
+                try {
+                  var theme = localStorage.getItem("curo_theme");
+                  if (!theme) {
+                    theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+                  }
+                  if (theme === "dark") document.documentElement.classList.add("dark");
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className="flex min-h-screen flex-col font-sans">
-        <AuthProvider>
-          <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
-          <PageLoadAnimation>
-            <Navbar />
-            <main className="flex-1">{children}</main>
-            <Footer />
-            <ChatBot />
-          </PageLoadAnimation>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
+            <PageLoadAnimation>
+              <Navbar />
+              <main className="flex-1">{children}</main>
+              <Footer />
+              <ChatBot />
+            </PageLoadAnimation>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

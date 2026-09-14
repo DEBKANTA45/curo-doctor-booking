@@ -132,7 +132,7 @@ export default function DoctorLoginForm() {
           </div>
         </div>
 
-        <div className="relative hidden overflow-hidden bg-gradient-to-br from-primary-light via-white to-primary-light lg:flex lg:flex-col lg:justify-center lg:border-l lg:border-line lg:px-14">
+        <div className="relative hidden overflow-hidden bg-gradient-to-br from-primary-light via-surface to-primary-light lg:flex lg:flex-col lg:justify-center lg:border-l lg:border-line lg:px-14">
           <div className="relative max-w-sm">
             <DoctorLoginIllustration className="mb-8 h-auto w-full max-w-[280px]" />
             <span className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-white">

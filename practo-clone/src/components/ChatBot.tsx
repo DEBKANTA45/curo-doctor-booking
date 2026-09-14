@@ -121,29 +121,34 @@ export default function ChatBot() {
 
   return (
     <>
-      {/* Floating toggle button */}
-      <button
-        onClick={() => setOpen((v) => !v)}
-        aria-label={open ? "Close assistant" : "Open assistant"}
-        aria-expanded={open}
-        aria-controls="curo-assistant"
-        className="fixed bottom-4 right-4 z-50 flex h-12 items-center gap-2 rounded-full bg-brand-gradient px-4 text-white shadow-glow transition-[transform,filter] duration-150 ease-out hover:brightness-[1.06] active:scale-[0.97] sm:bottom-5 sm:right-5"
-      >
-        {open ? <X size={20} /> : <MessageCircle size={20} />}
-        <span className="text-sm font-medium">{open ? "Close" : "Need help?"}</span>
-      </button>
+      {/* Floating toggle button — hidden while the panel is open, since
+          the panel's own header close (X) button takes over that job. */}
+      {!open && (
+        <button
+          onClick={() => setOpen(true)}
+          aria-label="Open assistant"
+          aria-expanded={open}
+          aria-controls="curo-assistant"
+          className="fixed bottom-6 right-6 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-brand-gradient text-white shadow-glow transition-[transform,filter] duration-200 ease-out hover:scale-105 hover:brightness-[1.08] active:scale-95"
+        >
+          <MessageCircle size={22} />
+        </button>
+      )}
 
-      {/* Chat panel */}
+      {/* Chat panel — anchored between the navbar and the bottom edge
+          (top + bottom both set) so its height is always whatever space
+          is actually free, and it can never grow up and overlap the
+          sticky navbar regardless of viewport height. */}
       {open && (
         <section
           id="curo-assistant"
           role="dialog"
           aria-modal="false"
           aria-labelledby="assistant-title"
-          className="fixed bottom-20 right-4 z-50 flex h-[min(580px,calc(100dvh-6rem))] w-[calc(100vw-2rem)] max-w-[400px] flex-col overflow-hidden rounded-lg border border-line bg-surface shadow-xl sm:bottom-24 sm:right-5"
+          className="fixed inset-x-3 bottom-3 top-20 z-30 flex flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-soft animate-ecg-fade-in sm:inset-x-auto sm:right-6 sm:bottom-3 sm:top-24 sm:w-[360px]"
         >
           {/* Header */}
-          <div className="flex items-center gap-3 border-b border-line bg-brand-gradient-soft px-4 py-3">
+          <div className="flex items-center gap-3 border-b border-line bg-primary-light px-4 py-3.5">
             <span className="icon-tile shrink-0">
               <Stethoscope size={17} />
             </span>
@@ -156,7 +161,7 @@ export default function ChatBot() {
               onClick={resetConversation}
               aria-label="Start a new conversation"
               title="Start a new conversation"
-              className="flex h-8 w-8 items-center justify-center rounded-sm text-muted transition-[background-color,color,transform] duration-150 ease-out hover:bg-surface/80 hover:text-primary-dark active:scale-[0.97]"
+              className="flex h-8 w-8 items-center justify-center rounded-md text-muted transition-[background-color,color,transform] duration-150 ease-out hover:bg-surface/80 hover:text-primary-dark active:scale-[0.97]"
             >
               <RotateCcw size={16} />
             </button>
@@ -164,7 +169,7 @@ export default function ChatBot() {
               type="button"
               onClick={() => setOpen(false)}
               aria-label="Close assistant"
-              className="flex h-8 w-8 items-center justify-center rounded-sm text-muted transition-[background-color,color,transform] duration-150 ease-out hover:bg-surface/80 hover:text-primary-dark active:scale-[0.97]"
+              className="flex h-8 w-8 items-center justify-center rounded-md text-muted transition-[background-color,color,transform] duration-150 ease-out hover:bg-surface/80 hover:text-primary-dark active:scale-[0.97]"
             >
               <X size={17} />
             </button>
@@ -196,7 +201,7 @@ export default function ChatBot() {
                           key={a.href + a.label}
                           href={a.href}
                           onClick={() => setOpen(false)}
-                                                    className="rounded-full bg-cyan-dark px-2.5 py-1 text-xs font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:brightness-110 active:scale-[0.97]"
+                          className="rounded-full bg-cyan-dark px-2.5 py-1 text-xs font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:brightness-110 active:scale-[0.97]"
                         >
                           {a.label}
                         </Link>
@@ -209,7 +214,7 @@ export default function ChatBot() {
 
             {isTyping && (
               <div className="flex justify-start" role="status" aria-label="Assistant is preparing a reply">
-                               <div className="flex items-center gap-2 rounded-md border border-line bg-surface px-3 py-2 text-sm text-muted shadow-sm">
+                <div className="flex items-center gap-2 rounded-md border border-line bg-surface px-3 py-2 text-sm text-muted shadow-sm">
                   <span className="flex items-center gap-1" aria-hidden="true">
                     <span className="chat-typing-dot" />
                     <span className="chat-typing-dot chat-typing-dot-delay-one" />
@@ -246,7 +251,7 @@ export default function ChatBot() {
               onClick={() => handleSend()}
               aria-label="Send"
               disabled={!input.trim() || isTyping}
-                            className="flex h-9 w-9 items-center justify-center rounded-md bg-brand-gradient text-white shadow-sm transition-[transform,filter] duration-150 ease-out hover:brightness-[1.06] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40 disabled:brightness-100"
+              className="flex h-9 w-9 items-center justify-center rounded-md bg-brand-gradient text-white shadow-sm transition-[transform,filter] duration-150 ease-out hover:brightness-[1.06] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40 disabled:brightness-100"
             >
               <Send size={16} />
             </button>

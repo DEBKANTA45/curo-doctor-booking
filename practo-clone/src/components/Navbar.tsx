@@ -13,6 +13,7 @@ import {
   dismissNotification,
 } from "@/lib/mock-db";
 import EcgOverlay from "@/components/EcgOverlay";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const patientLinks = [
   { href: "/", label: "Home" },
@@ -133,8 +134,8 @@ export default function Navbar() {
                 href={link.href}
                 aria-current={pathname === link.href ? "page" : undefined}
                 className={`flex items-center rounded-sm px-4 py-1.5 text-sm font-medium transition-[background-color,color] duration-150 ease-out active:scale-[0.97] ${pathname === link.href
-                    ? "bg-primary-light text-primary-dark"
-                    : "text-muted hover:bg-primary-light hover:text-primary-dark"
+                  ? "bg-primary-light text-primary-dark"
+                  : "text-muted hover:bg-primary-light hover:text-primary-dark"
                   }`}
               >
                 {link.label}
@@ -143,6 +144,7 @@ export default function Navbar() {
           </nav>
 
           <div className="hidden items-center gap-2 md:flex">
+            <ThemeToggle />
             {account ? (
               <div className="flex items-center gap-2">
                 {account.role === "patient" && (
@@ -297,6 +299,11 @@ export default function Navbar() {
                 </Link>
               ))}
               <div className="mt-2 h-px bg-line" />
+              <div className="flex items-center justify-between py-1">
+                <span className="text-sm text-muted">Theme</span>
+                <ThemeToggle />
+              </div>
+              <div className="h-px bg-line" />
               {account ? (
                 <>
                   {account.role === "patient" ? (
