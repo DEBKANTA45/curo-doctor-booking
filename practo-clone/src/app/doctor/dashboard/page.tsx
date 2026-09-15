@@ -16,7 +16,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { Appointment } from "@/lib/types";
 import { getAppointmentsForDoctor, getCustomDoctorById, rescheduleAppointment } from "@/lib/mock-db";
-
+import toast from "react-hot-toast";
 function todayIso() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -150,8 +150,12 @@ export default function DoctorDashboardPage() {
   );
   const cancelled = useMemo(() => byDate.filter((a) => a.status === "cancelled"), [byDate]);
 
-  const handleReschedule = (id: string, newDate: string) => {
-    rescheduleAppointment(id, newDate);
+    const handleReschedule = (id: string, newDate: string) => {
+    const updated = rescheduleAppointment(id, newDate);
+    if (!updated) {
+      toast.error("That date already has a booking at this time. Please choose another date.");
+      return;
+    }
     refreshAppointments();
     setOpenRescheduleId(null);
   };

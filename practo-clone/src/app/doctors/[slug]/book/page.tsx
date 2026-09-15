@@ -3,10 +3,10 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { CheckCircle2, ChevronLeft, Sunrise, Sun, Sunset, CalendarDays, BadgeCheck, MapPin, Globe2 } from "lucide-react";
+import { CheckCircle2, ChevronLeft, Sunrise, Sun, Sunset, CalendarDays, BadgeCheck, MapPin, Globe2, CreditCard, Lock, Loader2, Clock, X } from "lucide-react";
 import { useDoctorBySlug } from "@/lib/hooks";
 import { useAuth } from "@/context/AuthContext";
-import { createAppointment, getRatingSummary, getAllReviewsForDoctor } from "@/lib/mock-db";
+import { createAppointment, getRatingSummary, getAllReviewsForDoctor, isSlotTaken } from "@/lib/mock-db";
 import RatingStars from "@/components/RatingStars";
 
 const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -25,6 +25,17 @@ function formatShort(d: Date) {
 
 function isSameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function formatCardNumber(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 16);
+  return digits.replace(/(.{4})/g, "$1 ").trim();
+}
+
+function formatExpiry(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 4);
+  if (digits.length <= 2) return digits;
+  return `${digits.slice(0, 2)}/${digits.slice(2)}`;
 }
 
 function describeDate(iso: string) {
@@ -152,6 +163,19 @@ export default function BookAppointmentPage({
   const [reason, setReason] = useState("");
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState("");
+  const [step, setStep] = useState<"details" | "payment">("details");
+  const [slotModalOpen, setSlotModalOpen] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"card" | "upi">("card");
+  const [processingPayment, setProcessingPayment] = useState(false);
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvv, setCardCvv] = useState("");
+  const [cardName, setCardName] = useState("");
+  const [upiId, setUpiId] = useState("");
+  const [paymentError, setPaymentError] = useState("");
+
+  const selectedInfo = selectedDate ? describeDate(selectedDate) : null;
+  const selectedIsQuickDay = selectedDate ? quickDays.includes(selectedDate) : false;
 
   const month = useMemo(
     () => (doctor ? buildMonthDays(calendarMonth, currentYear, doctor.availableDays, minBookableDate, maxBookableDate) : null),
@@ -240,28 +264,226 @@ export default function BookAppointmentPage({
     );
   }
 
-  const handleConfirm = () => {
+  const handleProceedToPayment = () => {
     if (!selectedDate || !selectedTime) {
       setError("Please choose a day and time for your visit.");
       return;
     }
-    createAppointment({
-      doctorId: doctor.id,
-      doctorName: doctor.name,
-      doctorSpecialty: doctor.specialty,
-      patientEmail: account.email,
-      patientName: account.name,
-      date: selectedDate,
-      time: selectedTime,
-      fee: doctor.consultationFee,
-      reason: reason.trim() || "General consultation",
-    });
-    setConfirmed(true);
+    setError("");
+    setStep("payment");
   };
+
+  const handlePay = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPaymentError("");
+
+    if (paymentMethod === "upi") {
+      if (!/^[\w.\-]{2,}@[a-zA-Z]{2,}$/.test(upiId.trim())) {
+        setPaymentError("Enter a valid UPI ID, e.g. yourname@upi.");
+        return;
+      }
+    } else {
+      const digitsOnly = cardNumber.replace(/\s/g, "");
+      if (digitsOnly.length !== 16 || !/^\d+$/.test(digitsOnly)) {
+        setPaymentError("Enter a valid 16-digit card number.");
+        return;
+      }
+      if (!/^\d{2}\/\d{2}$/.test(cardExpiry)) {
+        setPaymentError("Enter expiry as MM/YY.");
+        return;
+      }
+      if (!/^\d{3,4}$/.test(cardCvv)) {
+        setPaymentError("Enter a valid CVV.");
+        return;
+      }
+      if (!cardName.trim()) {
+        setPaymentError("Enter the name on the card.");
+        return;
+      }
+    }
+
+    setProcessingPayment(true);
+    // This is a demo — no real payment gateway is involved. We simulate a
+    // brief processing delay so the flow feels real, then confirm the
+    // booking exactly as before.
+    setTimeout(() => {
+      createAppointment({
+        doctorId: doctor.id,
+        doctorName: doctor.name,
+        doctorSpecialty: doctor.specialty,
+        patientEmail: account.email,
+        patientName: account.name,
+        date: selectedDate,
+        time: selectedTime,
+        fee: doctor.consultationFee,
+        reason: reason.trim() || "General consultation",
+      });
+      setProcessingPayment(false);
+      setConfirmed(true);
+    }, 1400);
+  };
+
+  if (step === "payment") {
+    return (
+      <div className="mx-auto max-w-content px-5 py-10">
+        <button
+          onClick={() => setStep("details")}
+          className="flex items-center gap-1 text-sm text-muted hover:text-ink"
+        >
+          <ChevronLeft size={16} /> Back to appointment details
+        </button>
+
+        <div className="mx-auto mt-6 max-w-md rounded-lg border border-line bg-surface p-8">
+          <span className="flex h-11 w-11 items-center justify-center rounded-md bg-primary-light text-primary">
+            <CreditCard size={20} />
+          </span>
+          <h1 className="mt-5 font-display text-xl font-semibold text-ink">
+            Complete your payment
+          </h1>
+          <p className="mt-1.5 text-sm text-muted">
+            {doctor.name} &middot; {selectedInfo?.label}{selectedInfo?.sublabel ? ` (${selectedInfo.sublabel})` : ""} at {selectedTime}
+          </p>
+
+          <div className="mt-5 flex items-center justify-between rounded-md bg-bg px-4 py-3 text-sm">
+            <span className="text-muted">Amount to pay</span>
+            <span className="font-tabular text-lg font-semibold text-ink">₹{doctor.consultationFee}</span>
+          </div>
+
+          <div className="mt-5 inline-flex w-full items-center gap-1 rounded-md border border-line bg-bg p-1">
+            <button
+              type="button"
+              onClick={() => setPaymentMethod("card")}
+              className={`flex-1 rounded-sm px-4 py-1.5 text-sm font-medium transition-colors ${paymentMethod === "card" ? "bg-surface text-primary shadow-card" : "text-muted hover:text-ink"
+                }`}
+            >
+              Card
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaymentMethod("upi")}
+              className={`flex-1 rounded-sm px-4 py-1.5 text-sm font-medium transition-colors ${paymentMethod === "upi" ? "bg-surface text-primary shadow-card" : "text-muted hover:text-ink"
+                }`}
+            >
+              UPI
+            </button>
+          </div>
+
+          <form onSubmit={handlePay} className="mt-6 space-y-4">
+            {paymentMethod === "upi" ? (
+              <div>
+                <label htmlFor="upiId" className="text-sm font-medium text-ink">
+                  UPI ID
+                </label>
+                <input
+                  id="upiId"
+                  type="text"
+                  required
+                  value={upiId}
+                  onChange={(e) => setUpiId(e.target.value)}
+                  className="mt-1.5 w-full rounded-md border border-line bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition-colors focus:border-primary focus:ring-4 focus:ring-primary/10"
+                  placeholder="yourname@upi"
+                />
+                <p className="mt-1.5 text-xs text-faint">
+                  You'll get a payment request on your UPI app to approve.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <label htmlFor="cardName" className="text-sm font-medium text-ink">
+                    Name on card
+                  </label>
+                  <input
+                    id="cardName"
+                    type="text"
+                    required
+                    value={cardName}
+                    onChange={(e) => setCardName(e.target.value)}
+                    className="mt-1.5 w-full rounded-md border border-line bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition-colors focus:border-primary focus:ring-4 focus:ring-primary/10"
+                    placeholder="As it appears on the card"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="cardNumber" className="text-sm font-medium text-ink">
+                    Card number
+                  </label>
+                  <input
+                    id="cardNumber"
+                    type="text"
+                    inputMode="numeric"
+                    required
+                    value={cardNumber}
+                    onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+                    className="mt-1.5 w-full rounded-md border border-line bg-surface px-3.5 py-2.5 font-tabular text-sm text-ink outline-none transition-colors focus:border-primary focus:ring-4 focus:ring-primary/10"
+                    placeholder="1234 5678 9012 3456"
+                  />
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <label htmlFor="cardExpiry" className="text-sm font-medium text-ink">
+                      Expiry
+                    </label>
+                    <input
+                      id="cardExpiry"
+                      type="text"
+                      inputMode="numeric"
+                      required
+                      value={cardExpiry}
+                      onChange={(e) => setCardExpiry(formatExpiry(e.target.value))}
+                      className="mt-1.5 w-full rounded-md border border-line bg-surface px-3.5 py-2.5 font-tabular text-sm text-ink outline-none transition-colors focus:border-primary focus:ring-4 focus:ring-primary/10"
+                      placeholder="MM/YY"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label htmlFor="cardCvv" className="text-sm font-medium text-ink">
+                      CVV
+                    </label>
+                    <input
+                      id="cardCvv"
+                      type="text"
+                      inputMode="numeric"
+                      required
+                      value={cardCvv}
+                      onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                      className="mt-1.5 w-full rounded-md border border-line bg-surface px-3.5 py-2.5 font-tabular text-sm text-ink outline-none transition-colors focus:border-primary focus:ring-4 focus:ring-primary/10"
+                      placeholder="123"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {paymentError && <p className="text-sm text-accent">{paymentError}</p>}
+
+            <button
+              type="submit"
+              disabled={processingPayment}
+              className="flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {processingPayment ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" /> Processing payment…
+                </>
+              ) : (
+                `Pay ₹${doctor.consultationFee}`
+              )}
+            </button>
+          </form>
+
+          <p className="mt-4 flex items-center justify-center gap-1.5 text-center text-xs text-faint">
+            <Lock size={12} /> This is a demo checkout — no real payment is processed.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const pickDate = (date: string) => {
     setSelectedDate(date);
     setSelectedTime("");
+    setSlotModalOpen(false);
   };
 
   const renderSlotGroup = (title: string, icon: React.ReactNode, slots: string[]) => {
@@ -272,25 +494,33 @@ export default function BookAppointmentPage({
           {icon} {title}
         </p>
         <div className="mt-2.5 flex flex-wrap gap-2">
-          {slots.map((slot) => (
-            <button
-              key={slot}
-              onClick={() => setSelectedTime(slot)}
-              className={`rounded-md border px-3.5 py-2 text-sm font-tabular transition-colors ${selectedTime === slot
-                  ? "border-primary bg-primary text-white"
-                  : "border-line text-ink hover:border-primary"
-                }`}
-            >
-              {slot}
-            </button>
-          ))}
+          {slots.map((slot) => {
+            const taken = selectedDate ? isSlotTaken(doctor.id, selectedDate, slot) : false;
+            return (
+              <button
+                key={slot}
+                disabled={taken}
+                onClick={() => {
+                  setSelectedTime(slot);
+                  setSlotModalOpen(false);
+                }}
+                className={`rounded-md border px-3.5 py-2 text-sm font-tabular transition-colors ${taken
+                    ? "cursor-not-allowed border-line bg-bg text-faint line-through"
+                    : selectedTime === slot
+                      ? "border-primary bg-primary text-white"
+                      : "border-line text-ink hover:border-primary"
+                  }`}
+              >
+                {slot}
+                {taken && <span className="ml-1 text-[10px] no-underline">(Booked)</span>}
+              </button>
+            );
+          })}
         </div>
       </div>
     );
   };
 
-  const selectedInfo = selectedDate ? describeDate(selectedDate) : null;
-  const selectedIsQuickDay = selectedDate ? quickDays.includes(selectedDate) : false;
   const { rating, reviewCount } = getRatingSummary(doctor);
   const reviews = getAllReviewsForDoctor(doctor.id);
   return (
@@ -477,10 +707,61 @@ export default function BookAppointmentPage({
 
           <div className="mt-6">
             <p className="text-sm font-medium text-ink">Choose a time</p>
-            {renderSlotGroup("Morning", <Sunrise size={13} />, morning)}
-            {renderSlotGroup("Afternoon", <Sun size={13} />, afternoon)}
-            {renderSlotGroup("Evening", <Sunset size={13} />, evening)}
+            <button
+              type="button"
+              onClick={() => selectedDate && setSlotModalOpen(true)}
+              disabled={!selectedDate}
+              className={`mt-2.5 flex w-full items-center justify-between rounded-md border px-4 py-3 text-sm transition-colors ${!selectedDate
+                  ? "cursor-not-allowed border-line bg-bg text-faint"
+                  : "border-line text-ink hover:border-primary"
+                }`}
+            >
+              <span className="flex items-center gap-2">
+                <Clock size={16} className={selectedTime ? "text-primary" : "text-faint"} />
+                {selectedTime ? (
+                  <span className="font-tabular font-medium text-ink">{selectedTime}</span>
+                ) : (
+                  <span>{selectedDate ? "Choose a time slot" : "Select a date first"}</span>
+                )}
+              </span>
+              {selectedTime && <span className="text-xs font-medium text-primary">Change</span>}
+            </button>
           </div>
+
+          {slotModalOpen && (
+            <div
+              className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 sm:items-center sm:p-4"
+              onClick={() => setSlotModalOpen(false)}
+            >
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="max-h-[80vh] w-full overflow-y-auto rounded-t-xl border border-line bg-surface p-6 shadow-soft animate-ecg-fade-in sm:max-w-md sm:rounded-xl"
+              >
+                <div className="flex items-center justify-between">
+                  <h3 className="font-display text-lg font-semibold text-ink">Choose a time</h3>
+                  <button
+                    onClick={() => setSlotModalOpen(false)}
+                    aria-label="Close"
+                    className="flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-bg hover:text-ink"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+                <p className="mt-1 text-sm text-muted">
+                  {selectedInfo?.label}
+                  {selectedInfo?.sublabel ? ` (${selectedInfo.sublabel})` : ""}
+                </p>
+
+                {renderSlotGroup("Morning", <Sunrise size={13} />, morning)}
+                {renderSlotGroup("Afternoon", <Sun size={13} />, afternoon)}
+                {renderSlotGroup("Evening", <Sunset size={13} />, evening)}
+
+                {morning.length === 0 && afternoon.length === 0 && evening.length === 0 && (
+                  <p className="mt-4 text-sm text-muted">No time slots available for this doctor.</p>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="mt-6">
             <label htmlFor="reason" className="text-sm font-medium text-ink">
@@ -513,14 +794,11 @@ export default function BookAppointmentPage({
             </div>
           </div>
           <button
-            onClick={handleConfirm}
+            onClick={handleProceedToPayment}
             className="mt-5 w-full rounded-md bg-primary px-4 py-3 text-sm font-medium text-white hover:bg-primary-dark"
           >
-            Confirm appointment
+            Proceed to payment
           </button>
-          <p className="mt-3 text-center text-xs text-faint">
-            Pay ₹{doctor.consultationFee} at the clinic during your visit
-          </p>
                </div>
            </div>
     </div>

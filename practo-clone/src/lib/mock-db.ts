@@ -286,9 +286,21 @@ export function getVisitHistoryForDoctorAndPatient(
     });
 }
 
+// Returns true if the given doctor already has an active (non-cancelled)
+// appointment at this exact date + time — used to block double-booking
+// the same slot.
+export function isSlotTaken(doctorId: string, date: string, time: string): boolean {
+  return getAppointments().some(
+    (a) => a.doctorId === doctorId && a.date === date && a.time === time && a.status !== "cancelled"
+  );
+}
+
 export function createAppointment(
   appt: Omit<Appointment, "id" | "createdAt" | "status">
 ): Appointment {
+  if (isSlotTaken(appt.doctorId, appt.date, appt.time)) {
+    throw new Error("This slot has just been booked by someone else. Please choose another time.");
+  }
   const full: Appointment = {
     ...appt,
     id: `apt_${Date.now()}`,
@@ -311,6 +323,8 @@ export function cancelAppointment(id: string, cancelledBy: "patient" | "doctor" 
   if (!appt) return;
 
   if (cancelledBy === "patient") {
+    // Notify the doctor (only self-registered doctors have a login account
+    // to notify — seeded demo doctors have none).
     const doctorAccount = getAccounts().find(
       (a) => a.role === "doctor" && a.doctorId === appt.doctorId
     );
@@ -327,12 +341,14 @@ export function cancelAppointment(id: string, cancelledBy: "patient" | "doctor" 
     );
   }
 }
+
 export function rescheduleAppointment(id: string, newDate: string): Appointment | null {
   const all = getAppointments();
   const index = all.findIndex((a) => a.id === id);
   if (index === -1) return null;
   const previous = all[index];
   if (previous.date === newDate) return previous;
+  if (isSlotTaken(previous.doctorId, newDate, previous.time)) return null;
 
   const updated: Appointment = { ...previous, date: newDate };
   all[index] = updated;
@@ -447,8 +463,6 @@ export function getRatingSummary(doctor: Doctor): { rating: number; reviewCount:
 
   return { rating, reviewCount: totalCount };
 }
-
-
 // ---------- Password reset ----------
 
 const RESET_TOKENS_KEY = "curo_reset_tokens";
