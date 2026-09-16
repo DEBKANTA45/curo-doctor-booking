@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 import {
   CalendarX2,
@@ -19,10 +19,10 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { loadAppointmentsForPatient, cancelAppointmentThunk } from "@/store/appointmentsSlice";
 import { Appointment, Notification } from "@/lib/types";
 import {
+  getAppointmentsForPatient,
+  cancelAppointment,
   getNotifications,
   markAllNotificationsRead,
   dismissNotification,
@@ -37,8 +37,8 @@ type Tab = "upcoming" | "completed" | "cancelled";
 export default function AppointmentsPage() {
   const { account, loading, logout } = useAuth();
   const router = useRouter();
-  const dispatch = useAppDispatch();
-  const appointments = useAppSelector((state) => state.appointments.all);
+  const pathname = usePathname();
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [tab, setTab] = useState<Tab>("upcoming");
   const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
@@ -46,13 +46,13 @@ export default function AppointmentsPage() {
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewComment, setReviewComment] = useState("");
 
-  useEffect(() => {
+    useEffect(() => {
     if (account?.role === "patient") {
-      dispatch(loadAppointmentsForPatient(account.email));
+      setAppointments(getAppointmentsForPatient(account.email));
       setNotifications(getNotifications(account.email));
       markAllNotificationsRead(account.email);
     }
-  }, [account, dispatch]);
+  }, [account, pathname]);
 
   // Recomputed whenever the Redux appointment list changes (initial load,
   // a fresh cancel, etc.) rather than only once at fetch time.
@@ -87,8 +87,11 @@ export default function AppointmentsPage() {
     setOpenReviewId(null);
   };
 
-  const handleCancel = (id: string) => {
-    dispatch(cancelAppointmentThunk({ id, cancelledBy: "patient" }));
+   const handleCancel = (id: string) => {
+    cancelAppointment(id, "patient");
+    if (account?.role === "patient") {
+      setAppointments(getAppointmentsForPatient(account.email));
+    }
   };
 
   const handleLogout = () => {
