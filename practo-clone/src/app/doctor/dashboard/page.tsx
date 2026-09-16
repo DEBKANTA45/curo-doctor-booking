@@ -12,10 +12,19 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
+  Video,
+  MapPin,
+  Timer,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Appointment } from "@/lib/types";
 import { getAppointmentsForDoctor, getCustomDoctorById, rescheduleAppointment } from "@/lib/mock-db";
+import {
+  getConsultationType,
+  getAppointmentPhase,
+  getPhaseLabel,
+  formatCountdown,
+} from "@/lib/consultation";
 import toast from "react-hot-toast";
 function todayIso() {
   const d = new Date();
@@ -119,6 +128,14 @@ export default function DoctorDashboardPage() {
   const [dateFilter, setDateFilter] = useState(todayIso());
   const [openRescheduleId, setOpenRescheduleId] = useState<string | null>(null);
   const [myAvailableDays, setMyAvailableDays] = useState<string[] | null>(null);
+  const [now, setNow] = useState(() => new Date());
+
+  // Ticks once a second so "Starting soon" → "Live" and the countdown
+  // stay current without the doctor needing to refresh.
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const refreshAppointments = () => {
     if (account?.role === "doctor") {
@@ -259,65 +276,111 @@ export default function DoctorDashboardPage() {
           ) : (
             <div className="space-y-3">
               {tab === "pending" &&
-                pending.map((a) => (
-                  <div
-                    key={a.id}
-                    className="card card-hover p-4"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <button
-                        onClick={() => router.push(`/doctor/consult/${a.id}`)}
-                        className="flex flex-1 items-center gap-3 text-left"
-                      >
-                        <span
-                          draggable
-                          onDragStart={(e) => {
-                            e.stopPropagation();
-                            e.dataTransfer.setData("text/plain", a.id);
-                          }}
-                          className="flex cursor-grab items-center gap-2 rounded-md py-0.5 pr-2 active:cursor-grabbing"
-                          title="Drag onto a date to reschedule"
-                        >
-                          <span className="icon-tile-soft h-9 w-9">
-                            <User size={16} />
-                          </span>
-                          <span className="text-sm font-medium text-ink">{a.patientName}</span>
-                        </span>
-                        <span className="hidden text-xs text-muted sm:inline">{a.reason}</span>
-                      </button>
-                      <div className="flex items-center gap-2">
-                        <div className="text-right text-sm text-ink">
-                          <p className="font-tabular">
-                            {a.date} &middot; {a.time}
-                          </p>
-                          <p className="text-xs text-muted">₹{a.fee}</p>
-                        </div>
-                        <button
-                          onClick={() =>
-                            setOpenRescheduleId(openRescheduleId === a.id ? null : a.id)
-                          }
-                          aria-label="Reschedule"
-                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md border transition-colors ${
-                            openRescheduleId === a.id
-                              ? "border-primary bg-primary text-white"
-                              : "border-line text-muted hover:border-primary hover:text-ink"
-                          }`}
-                        >
-                          <CalendarDays size={15} />
-                        </button>
-                        <ChevronRight size={16} className="hidden text-faint sm:block" />
-                      </div>
-                    </div>
+                pending.map((a) => {
+                  const type = getConsultationType(a);
+                  const phase = getAppointmentPhase(a, now);
+                  const isOnline = type === "online";
+                  const canStart = isOnline && (phase === "starting-soon" || phase === "live");
+                  const countdown = isOnline ? formatCountdown(a, now) : null;
 
-                    {openRescheduleId === a.id && (
-                      <RescheduleCalendar
-                        appointmentId={a.id}
-                        availableDays={myAvailableDays}
-                        onReschedule={handleReschedule}
-                      />
-                    )}
-                  </div>
-                ))}
+                  return (
+                    <div
+                      key={a.id}
+                      className="card card-hover p-4"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <button
+                          onClick={() => router.push(`/doctor/consult/${a.id}`)}
+                          className="flex flex-1 items-center gap-3 text-left"
+                        >
+                          <span
+                            draggable
+                            onDragStart={(e) => {
+                              e.stopPropagation();
+                              e.dataTransfer.setData("text/plain", a.id);
+                            }}
+                            className="flex cursor-grab items-center gap-2 rounded-md py-0.5 pr-2 active:cursor-grabbing"
+                            title="Drag onto a date to reschedule"
+                          >
+                            <span className="icon-tile-soft h-9 w-9">
+                              <User size={16} />
+                            </span>
+                            <span className="text-sm font-medium text-ink">{a.patientName}</span>
+                          </span>
+                          <span
+                            className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                              isOnline ? "bg-cyan-light text-cyan-dark" : "bg-primary-light text-primary-dark"
+                            }`}
+                          >
+                            {isOnline ? <Video size={11} /> : <MapPin size={11} />}
+                            {isOnline ? "Online" : "In-person"}
+                          </span>
+                          {phase !== "upcoming" && (
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                                phase === "live" ? "bg-success-light text-success" : "bg-accent-light text-accent"
+                              }`}
+                            >
+                              {getPhaseLabel(phase, type)}
+                            </span>
+                          )}
+                          <span className="hidden text-xs text-muted sm:inline">{a.reason}</span>
+                        </button>
+                        <div className="flex items-center gap-2">
+                          <div className="text-right text-sm text-ink">
+                            <p className="font-tabular">
+                              {a.date} &middot; {a.time}
+                            </p>
+                            <p className="text-xs text-muted">
+                              {isOnline && countdown ? (
+                                <span className="flex items-center justify-end gap-1 text-primary">
+                                  <Timer size={11} /> {countdown}
+                                </span>
+                              ) : (
+                                `₹${a.fee}`
+                              )}
+                            </p>
+                          </div>
+                          {isOnline && (
+                            <button
+                              onClick={() => canStart && router.push(`/doctor/consult/${a.id}`)}
+                              disabled={!canStart}
+                              className={`shrink-0 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                                canStart
+                                  ? "bg-primary text-white hover:bg-primary-dark"
+                                  : "cursor-not-allowed border border-line bg-bg text-faint"
+                              }`}
+                            >
+                              Start Consultation
+                            </button>
+                          )}
+                          <button
+                            onClick={() =>
+                              setOpenRescheduleId(openRescheduleId === a.id ? null : a.id)
+                            }
+                            aria-label="Reschedule"
+                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md border transition-colors ${
+                              openRescheduleId === a.id
+                                ? "border-primary bg-primary text-white"
+                                : "border-line text-muted hover:border-primary hover:text-ink"
+                            }`}
+                          >
+                            <CalendarDays size={15} />
+                          </button>
+                          <ChevronRight size={16} className="hidden text-faint sm:block" />
+                        </div>
+                      </div>
+
+                      {openRescheduleId === a.id && (
+                        <RescheduleCalendar
+                          appointmentId={a.id}
+                          availableDays={myAvailableDays}
+                          onReschedule={handleReschedule}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
 
               {tab === "completed" &&
                 completed.map((a) => (
