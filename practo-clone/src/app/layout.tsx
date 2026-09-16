@@ -4,10 +4,11 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ChatBot from "@/components/ChatBot";
-import { AuthProvider } from "@/context/AuthContext";
+import { AuthHydrator } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import PageLoadAnimation from "@/components/PageLoadAnimation";
 import { Toaster } from "react-hot-toast";
+import StoreProvider from "@/store/StoreProvider";
 
 const sora = Sora({
   subsets: ["latin"],
@@ -53,7 +54,8 @@ export default function RootLayout({
       </head>
       <body className="flex min-h-screen flex-col font-sans">
         <ThemeProvider>
-          <AuthProvider>
+          <StoreProvider>
+            <AuthHydrator />
             <Toaster
               position="top-center"
               toastOptions={{
@@ -71,7 +73,7 @@ export default function RootLayout({
               <Footer />
               <ChatBot />
             </PageLoadAnimation>
-          </AuthProvider>
+          </StoreProvider>
         </ThemeProvider>
       </body>
     </html>

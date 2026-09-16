@@ -1,49 +1,47 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from "react";
+import { useCallback, useEffect } from "react";
 import { Account } from "@/lib/types";
 import { getSession, logout as logoutDb } from "@/lib/mock-db";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { setAccount, setLoading } from "@/store/authSlice";
 
-interface AuthContextValue {
-  account: Account | null;
-  loading: boolean;
-  refresh: () => void;
-  logout: () => void;
-}
-
-const AuthContext = createContext<AuthContextValue>({
-  account: null,
-  loading: true,
-  refresh: () => {},
-  logout: () => {},
-});
-
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [account, setAccount] = useState<Account | null>(null);
-  const [loading, setLoading] = useState(true);
+/**
+ * Every existing page/component in this app already calls useAuth() and
+ * expects { account, loading, refresh, logout }. This is now backed by
+ * Redux (src/store/authSlice.ts) instead of React Context, but the public
+ * API is kept identical on purpose — so migrating to Redux didn't require
+ * touching the 20+ files that already call useAuth().
+ */
+export function useAuth() {
+  const dispatch = useAppDispatch();
+  const account = useAppSelector((state) => state.auth.account);
+  const loading = useAppSelector((state) => state.auth.loading);
 
   const refresh = useCallback(() => {
-    setAccount(getSession());
-  }, []);
-
-  useEffect(() => {
-    refresh();
-    setLoading(false);
-  }, [refresh]);
+    dispatch(setAccount(getSession()));
+  }, [dispatch]);
 
   const logout = useCallback(() => {
     logoutDb();
-    setAccount(null);
-  }, []);
+    dispatch(setAccount(null));
+  }, [dispatch]);
 
-  const value = useMemo<AuthContextValue>(
-    () => ({ account, loading, refresh, logout }),
-    [account, loading, refresh, logout]
-  );
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return { account, loading, refresh, logout };
 }
 
-export function useAuth() {
-  return useContext(AuthContext);
+/**
+ * Renders nothing — just hydrates the Redux auth state from localStorage
+ * once on mount. Replaces what AuthProvider's effect used to do. Must be
+ * rendered once, inside <StoreProvider>, near the root of the app.
+ */
+export function AuthHydrator() {
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    dispatch(setAccount(getSession()));
+    dispatch(setLoading(false));
+  }, [dispatch]);
+
+  return null;
 }

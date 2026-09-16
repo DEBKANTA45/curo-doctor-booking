@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+
 import {
   CalendarX2,
   CalendarClock,
@@ -18,10 +19,10 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { loadAppointmentsForPatient, cancelAppointmentThunk } from "@/store/appointmentsSlice";
 import { Appointment, Notification } from "@/lib/types";
 import {
-  cancelAppointment,
-  getAppointmentsForPatient,
   getNotifications,
   markAllNotificationsRead,
   dismissNotification,
@@ -36,7 +37,8 @@ type Tab = "upcoming" | "completed" | "cancelled";
 export default function AppointmentsPage() {
   const { account, loading, logout } = useAuth();
   const router = useRouter();
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const dispatch = useAppDispatch();
+  const appointments = useAppSelector((state) => state.appointments.all);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [tab, setTab] = useState<Tab>("upcoming");
   const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
@@ -46,15 +48,19 @@ export default function AppointmentsPage() {
 
   useEffect(() => {
     if (account?.role === "patient") {
-      const list = getAppointmentsForPatient(account.email);
-      setAppointments(list);
+      dispatch(loadAppointmentsForPatient(account.email));
       setNotifications(getNotifications(account.email));
       markAllNotificationsRead(account.email);
-      setReviewedIds(
-        new Set(list.filter((a) => hasReviewedAppointment(a.id)).map((a) => a.id))
-      );
     }
-  }, [account]);
+  }, [account, dispatch]);
+
+  // Recomputed whenever the Redux appointment list changes (initial load,
+  // a fresh cancel, etc.) rather than only once at fetch time.
+  useEffect(() => {
+    setReviewedIds(
+      new Set(appointments.filter((a) => hasReviewedAppointment(a.id)).map((a) => a.id))
+    );
+  }, [appointments]);
 
   const handleDismissNotification = (id: string) => {
     dismissNotification(id);
@@ -82,10 +88,7 @@ export default function AppointmentsPage() {
   };
 
   const handleCancel = (id: string) => {
-    cancelAppointment(id, "patient");
-    if (account?.role === "patient") {
-      setAppointments(getAppointmentsForPatient(account.email));
-    }
+    dispatch(cancelAppointmentThunk({ id, cancelledBy: "patient" }));
   };
 
   const handleLogout = () => {
