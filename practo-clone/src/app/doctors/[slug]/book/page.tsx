@@ -637,28 +637,28 @@ export default function BookAppointmentPage({
         {/* RIGHT — date, slot, and confirmation */}
         <div className="rounded-lg border border-line bg-surface p-6 lg:sticky lg:top-24 lg:h-fit">
           <p className="text-sm font-medium text-ink">Consultation type</p>
-          <div className="mt-2 inline-flex w-full items-center gap-1 rounded-md border border-line bg-bg p-1">
-            <button
-              type="button"
-              onClick={() => setConsultationType("in-person")}
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-sm px-3 py-2 text-sm font-medium transition-colors ${
-                consultationType === "in-person"
-                  ? "bg-surface text-primary shadow-card"
-                  : "text-muted hover:text-ink"
-              }`}
-            >
-              <MapPin size={14} /> In-person
-            </button>
+          <div className="mt-2.5 flex flex-col gap-2 sm:flex-row">
             <button
               type="button"
               onClick={() => setConsultationType("online")}
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-sm px-3 py-2 text-sm font-medium transition-colors ${
+              className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-3 text-sm font-semibold transition-colors ${
                 consultationType === "online"
-                  ? "bg-surface text-primary shadow-card"
-                  : "text-muted hover:text-ink"
+                  ? "bg-primary text-white shadow-sm"
+                  : "border border-line text-ink hover:border-primary"
               }`}
             >
-              <Video size={14} /> Online
+              <Video size={16} /> Book a Video Appointment
+            </button>
+            <button
+              type="button"
+              onClick={() => setConsultationType("in-person")}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-3 text-sm font-semibold transition-colors ${
+                consultationType === "in-person"
+                  ? "bg-primary text-white shadow-sm"
+                  : "border border-line text-ink hover:border-primary"
+              }`}
+            >
+              <MapPin size={16} /> Book an In-Clinic Visit
             </button>
           </div>
           <p className="mt-2 text-xs text-faint">
@@ -666,6 +666,42 @@ export default function BookAppointmentPage({
               ? "You'll get a link to join from your appointments page."
               : `Visit ${doctor.clinicName}${doctor.locality ? `, ${doctor.locality}` : ""}, ${doctor.city}.`}
           </p>
+
+          <p className="mt-5 text-sm font-medium text-ink">Consultation fees</p>
+          <div className="mt-2.5 overflow-hidden rounded-md border border-line">
+            <div
+              className={`flex items-center justify-between px-4 py-3 transition-colors ${
+                consultationType === "online" ? "bg-primary-light" : "bg-surface"
+              }`}
+            >
+              <span className="flex items-center gap-2 text-sm text-ink">
+                <Video size={14} className="text-muted" /> Video Consultation
+              </span>
+              <span
+                className={`font-tabular text-base font-semibold ${
+                  consultationType === "online" ? "text-primary" : "text-ink"
+                }`}
+              >
+                ₹{doctor.consultationFee}
+              </span>
+            </div>
+            <div
+              className={`flex items-center justify-between border-t border-line px-4 py-3 transition-colors ${
+                consultationType === "in-person" ? "bg-primary-light" : "bg-surface"
+              }`}
+            >
+              <span className="flex items-center gap-2 text-sm text-ink">
+                <MapPin size={14} className="text-muted" /> In-Clinic Visit
+              </span>
+              <span
+                className={`font-tabular text-base font-semibold ${
+                  consultationType === "in-person" ? "text-primary" : "text-ink"
+                }`}
+              >
+                ₹{doctor.consultationFee}
+              </span>
+            </div>
+          </div>
 
           <p className="mt-6 text-sm font-medium text-ink">Choose a day</p>
           <div className="mt-3 flex flex-wrap gap-2">
