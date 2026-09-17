@@ -20,7 +20,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { Appointment } from "@/lib/types";
 import { getAppointmentsForDoctor, getCustomDoctorById, rescheduleAppointment } from "@/lib/mock-db";
-import ConsultationBadge from "@/components/ConsultationBadge";
+import ConsultationBadge from "@/components/Consultationbadge";
 import {
   getConsultationType,
   getAppointmentPhase,
