@@ -72,6 +72,11 @@ export type Account = PatientAccount | DoctorAccount;
 // "online" video-call style visit, or the original in-person clinic visit.
 export type ConsultationType = "online" | "in-person";
 
+// How the patient paid at booking time. Optional so appointments created
+// before the payment step existed don't break — read through
+// getPaymentMethodLabel() (src/lib/consultation.ts) rather than directly.
+export type PaymentMethod = "card" | "upi";
+
 // Derived, time-based phase of an appointment — never stored, always
 // computed from `status` + `date` + `time` via getAppointmentPhase() in
 // src/lib/consultation.ts. Drives the "Upcoming → Starting Soon →
@@ -100,6 +105,9 @@ export interface Appointment {
   // (src/lib/consultation.ts), which defaults missing values to
   // "in-person" — never read appt.consultationType directly.
   consultationType?: ConsultationType;
+  // Optional for the same reason as consultationType above — older
+  // appointments predate the payment step and have no value here.
+  paymentMethod?: PaymentMethod;
 }
 
 export interface PatientProfile {

@@ -51,9 +51,6 @@ function describeDate(iso: string) {
   return { label: formatShort(date), sublabel: "" };
 }
 
-// Today, Tomorrow, and a few more upcoming days the doctor is actually
-// available — scans forward so the row never comes up short even if the
-// doctor skips a day or two.
 function buildQuickDays(availableDays: string[], minDate: Date, maxDate: Date, count = 4) {
   const out: string[] = [];
   const cursor = new Date(minDate);
@@ -66,9 +63,6 @@ function buildQuickDays(availableDays: string[], minDate: Date, maxDate: Date, c
   return out;
 }
 
-// Calendar for one month at a time — month is selectable, but only within
-// the CURRENT year (no year navigation). Past days and weekdays the doctor
-// doesn't work are disabled.
 function buildMonthDays(monthIndex: number, year: number, availableDays: string[], minDate: Date, maxDate: Date) {
   const lastDay = new Date(year, monthIndex + 1, 0).getDate();
 
@@ -82,7 +76,6 @@ function buildMonthDays(monthIndex: number, year: number, availableDays: string[
   return { days, leadingBlanks: new Date(year, monthIndex, 1).getDay() };
 }
 
-// Parses "10:00 AM" / "02:30 PM" into a 24-hour hour value.
 function parseSlotHour(slot: string): number {
   const [time, period] = slot.split(" ");
   const [hourStr] = time.split(":");
@@ -91,8 +84,6 @@ function parseSlotHour(slot: string): number {
   return hour;
 }
 
-// Morning: before noon. Afternoon: noon to before 4pm. Evening: 4pm onward.
-// (A plain AM/PM split was lumping 12–4pm into "evening", which read wrong.)
 function groupSlots(slots: string[]) {
   const morning: string[] = [];
   const afternoon: string[] = [];
@@ -105,8 +96,7 @@ function groupSlots(slots: string[]) {
   }
   return { morning, afternoon, evening };
 }
-// The doctor's own "open for booking" start/end dates, clamped so it never
-// starts before today and never runs past the current year on the calendar.
+
 function computeBookableRange(
   scheduleStart: string | undefined,
   scheduleEnd: string | undefined,
@@ -331,6 +321,7 @@ export default function BookAppointmentPage({
         fee: doctor.consultationFee,
         reason: reason.trim() || "General consultation",
         consultationType,
+        paymentMethod,
       });
       setProcessingPayment(false);
       setConfirmed(true);
@@ -616,13 +607,7 @@ export default function BookAppointmentPage({
               </p>
             </div>
           )}
-
-          
-
-
-
-
-              </div>
+        </div>
 
         <div className="rounded-lg border border-line bg-surface p-6">
           <h2 className="font-display text-lg font-semibold text-ink">
@@ -861,8 +846,8 @@ export default function BookAppointmentPage({
           >
             Proceed to payment
           </button>
-               </div>
-           </div>
+        </div>
+      </div>
     </div>
   );
 }

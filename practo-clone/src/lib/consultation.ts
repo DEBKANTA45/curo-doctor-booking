@@ -1,4 +1,4 @@
-import { Appointment, AppointmentPhase, ConsultationType } from "./types";
+import { Appointment, AppointmentPhase, ConsultationType, PaymentMethod } from "./types";
 
 // How long before the scheduled time an "upcoming" appointment flips to
 // "starting-soon". Kept in one place so every screen agrees on the timing.
@@ -13,6 +13,16 @@ export function getConsultationType(appt: Appointment): ConsultationType {
 
 export function isOnline(appt: Appointment): boolean {
   return getConsultationType(appt) === "online";
+}
+
+// Human-readable payment method label, e.g. "Card" / "UPI". Returns null
+// for appointments created before the payment step existed (no value
+// stored) so callers can decide whether to show anything at all.
+export function getPaymentMethodLabel(appt: Appointment): string | null {
+  const method: PaymentMethod | undefined = appt.paymentMethod;
+  if (method === "card") return "Card";
+  if (method === "upi") return "UPI";
+  return null;
 }
 
 // Parses this app's "date" ("YYYY-MM-DD") + "time" ("10:00 AM" / "02:30 PM")

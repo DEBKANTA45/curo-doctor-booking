@@ -34,10 +34,10 @@ import {
 } from "@/lib/mock-db";
 import { downloadPrescription } from "@/lib/utils";
 import StarPicker from "@/components/StarPicker";
+import ConsultationBadge from "@/components/Consultationbadge";
 import {
   getConsultationType,
   getAppointmentPhase,
-  getPhaseLabel,
   formatCountdown,
 } from "@/lib/consultation";
 
@@ -299,25 +299,7 @@ export default function AppointmentsPage() {
                           <div className="flex flex-wrap items-center gap-2">
                             <Stethoscope size={15} className="text-primary" />
                             <p className="text-sm font-medium text-ink">{a.doctorName}</p>
-                            <span
-                              className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${type === "online"
-                                  ? "bg-cyan-light text-cyan-dark"
-                                  : "bg-primary-light text-primary-dark"
-                                }`}
-                            >
-                              {type === "online" ? <Video size={11} /> : <MapPin size={11} />}
-                              {type === "online" ? "Online" : "In-person"}
-                            </span>
-                            {phase !== "upcoming" && (
-                              <span
-                                className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${phase === "live"
-                                    ? "bg-success-light text-success"
-                                    : "bg-accent-light text-accent"
-                                  }`}
-                              >
-                                {getPhaseLabel(phase, type)}
-                              </span>
-                            )}
+                           <ConsultationBadge type={type} phase={phase} />
                           </div>
                           <p className="mt-1 text-xs text-muted">{a.doctorSpecialty}</p>
                           <p className="mt-2 flex items-center gap-1.5 text-sm text-ink">
