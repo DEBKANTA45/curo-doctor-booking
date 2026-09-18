@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ShieldCheck, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useAdminAuth } from "@/context/AdminAuthContext";
+import toast from "react-hot-toast";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -12,14 +13,17 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [showEcg, setShowEcg] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const result = login(email, password);
     if (!result.ok) {
       setError(result.error ?? "Something went wrong.");
+      toast.error(result.error ?? "Login failed.");
       return;
     }
+    toast.success("Logged in successfully!");
     router.push("/admin");
   };
 
@@ -90,7 +94,7 @@ export default function AdminLoginPage() {
         </form>
 
         <p className="mt-6 text-center text-xs text-faint">
-          Demo credentials: admin@curo.com / admin123
+          Demo credentials: admin@curo.com / admin@7898
         </p>
       </div>
     </div>

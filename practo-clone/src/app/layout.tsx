@@ -1,14 +1,11 @@
 import type { Metadata } from "next";
 import { Sora, Inter } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import ChatBot from "@/components/ChatBot";
 import { AuthHydrator } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
-import PageLoadAnimation from "@/components/PageLoadAnimation";
 import { Toaster } from "react-hot-toast";
 import StoreProvider from "@/store/StoreProvider";
+import SiteChrome from "@/components/SiteChrome";
 
 const sora = Sora({
   subsets: ["latin"],
@@ -67,12 +64,7 @@ export default function RootLayout({
                 },
               }}
             />
-            <PageLoadAnimation>
-              <Navbar />
-              <main className="flex-1">{children}</main>
-              <Footer />
-              <ChatBot />
-            </PageLoadAnimation>
+            <SiteChrome>{children}</SiteChrome>
           </StoreProvider>
         </ThemeProvider>
       </body>

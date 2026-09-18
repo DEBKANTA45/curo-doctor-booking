@@ -4,7 +4,7 @@
 
 const ADMIN_SESSION_KEY = "curo_admin_session";
 const MOCK_ADMIN_EMAIL = "admin@curo.com";
-const MOCK_ADMIN_PASSWORD = "admin123";
+const MOCK_ADMIN_PASSWORD = "admin@7898";
 const MOCK_ADMIN_NAME = "Admin";
 
 export function adminLogin(email: string, password: string): { ok: boolean; error?: string } {
