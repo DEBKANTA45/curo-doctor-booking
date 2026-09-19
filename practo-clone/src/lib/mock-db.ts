@@ -3,10 +3,12 @@ import {
   Appointment,
   Doctor,
   DoctorAccount,
+  DoctorDocument,
   Notification,
   PatientAccount,
   PatientProfile,
   Review,
+  VerificationStatus,
 } from "./types";
 import { doctors as seedDoctors, reviews as seedReviews } from "./utils";
 
@@ -17,6 +19,7 @@ const CUSTOM_DOCTORS_KEY = "curo_custom_doctors";
 const PATIENT_PROFILES_KEY = "curo_patient_profiles";
 const NOTIFICATIONS_KEY = "curo_notifications";
 const CUSTOM_REVIEWS_KEY = "curo_custom_reviews";
+const DOCTOR_OVERRIDES_KEY = "curo_doctor_overrides";
 
 function read<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -121,6 +124,9 @@ export function registerDoctor(data: {
     nextAvailable: "Today",
     availableDays: ["Mon", "Tue", "Wed", "Thu", "Fri"],
     slots: ["10:00 AM", "11:00 AM", "04:00 PM", "05:00 PM"],
+    active: true,
+    verificationStatus: "pending",
+    registeredAt: new Date().toISOString(),
   };
 
   const customDoctors = getCustomDoctors();
@@ -182,12 +188,84 @@ export function getCustomDoctors(): Doctor[] {
   return read<Doctor[]>(CUSTOM_DOCTORS_KEY, []);
 }
 
+// Two seeded demo doctors ship as `verified: false` in doctors.json with no
+// verification workflow attached. Rather than editing the seed data, give
+// them a deterministic default status here so the Admin Portal has a
+// pending case and a rejected case to demo out of the box.
+const DEMO_REJECTED_SEED_IDS = new Set(["d15"]);
+const DEMO_REJECTION_REASON =
+  "Uploaded medical license image is blurry and the registration number isn't legible. Please reupload a clearer scan.";
+
+function defaultVerificationStatus(doctor: Doctor): VerificationStatus {
+  if (doctor.verified) return "approved";
+  return DEMO_REJECTED_SEED_IDS.has(doctor.id) ? "rejected" : "pending";
+}
+
+// Every doctor is expected to have submitted these three documents. Mock
+// data only — there's no real file storage, so each entry is metadata a
+// review UI can display (name, type, submission date).
+function generateMockDocuments(doctor: Doctor): DoctorDocument[] {
+  const submittedAt = doctor.registeredAt ?? "2024-01-10T00:00:00.000Z";
+  const degreeName = doctor.qualifications.split(",")[0]?.trim() || "Medical Degree";
+  return [
+    { id: `${doctor.id}_doc_license`, name: "Medical Council License", type: "License", uploadedAt: submittedAt },
+    { id: `${doctor.id}_doc_degree`, name: `${degreeName} Certificate`, type: "Degree", uploadedAt: submittedAt },
+    { id: `${doctor.id}_doc_id`, name: "Government Photo ID", type: "Identity", uploadedAt: submittedAt },
+  ];
+}
+
+interface DoctorOverride {
+  active?: boolean;
+  verificationStatus?: VerificationStatus;
+  rejectionReason?: string;
+}
+
+function getDoctorOverrides(): Record<string, DoctorOverride> {
+  return read<Record<string, DoctorOverride>>(DOCTOR_OVERRIDES_KEY, {});
+}
+
+function saveDoctorOverride(id: string, patch: DoctorOverride) {
+  const all = getDoctorOverrides();
+  all[id] = { ...all[id], ...patch };
+  write(DOCTOR_OVERRIDES_KEY, all);
+}
+
+// Merges a raw doctor record (seeded or self-registered) with its admin
+// override (if any), filling in sensible defaults for fields older seed/
+// custom records don't have yet. This is the single source of truth for
+// "what does this doctor's admin-facing state look like right now".
+function withDoctorMeta(doctor: Doctor, overrides: Record<string, DoctorOverride>): Doctor {
+  const override = overrides[doctor.id];
+  const verificationStatus =
+    override?.verificationStatus ?? doctor.verificationStatus ?? defaultVerificationStatus(doctor);
+  const verified = verificationStatus === "approved";
+  const active = override?.active ?? doctor.active ?? true;
+  const rejectionReason =
+    verificationStatus === "rejected"
+      ? override?.rejectionReason ?? doctor.rejectionReason ?? DEMO_REJECTION_REASON
+      : undefined;
+  const documents = doctor.documents ?? generateMockDocuments(doctor);
+
+  return { ...doctor, verified, active, verificationStatus, rejectionReason, documents };
+}
+
 export function getAllDoctors(): Doctor[] {
-  return [...seedDoctors, ...getCustomDoctors()];
+  const overrides = getDoctorOverrides();
+  return [...seedDoctors, ...getCustomDoctors()].map((d) => withDoctorMeta(d, overrides));
+}
+
+// Looks up a doctor by id across both seeded and self-registered doctors,
+// with admin overrides applied — the function admin screens should use.
+export function getDoctorById(id: string): Doctor | undefined {
+  const raw = seedDoctors.find((d) => d.id === id) ?? getCustomDoctors().find((d) => d.id === id);
+  if (!raw) return undefined;
+  return withDoctorMeta(raw, getDoctorOverrides());
 }
 
 export function getCustomDoctorById(id: string): Doctor | undefined {
-  return getCustomDoctors().find((d) => d.id === id);
+  const raw = getCustomDoctors().find((d) => d.id === id);
+  if (!raw) return undefined;
+  return withDoctorMeta(raw, getDoctorOverrides());
 }
 
 export function updateCustomDoctor(id: string, updates: Partial<Doctor>): Doctor | null {
@@ -197,7 +275,32 @@ export function updateCustomDoctor(id: string, updates: Partial<Doctor>): Doctor
   const updated = { ...all[index], ...updates };
   all[index] = updated;
   write(CUSTOM_DOCTORS_KEY, all);
-  return updated;
+  return withDoctorMeta(updated, getDoctorOverrides());
+}
+
+// ---------- Doctor management & verification (Admin Portal) ----------
+
+export function setDoctorActive(id: string, active: boolean): Doctor | undefined {
+  saveDoctorOverride(id, { active });
+  return getDoctorById(id);
+}
+
+export function approveDoctorVerification(id: string): Doctor | undefined {
+  saveDoctorOverride(id, { verificationStatus: "approved", rejectionReason: undefined });
+  return getDoctorById(id);
+}
+
+export function rejectDoctorVerification(id: string, reason: string): Doctor | undefined {
+  const trimmed = reason.trim();
+  saveDoctorOverride(id, { verificationStatus: "rejected", rejectionReason: trimmed });
+  return getDoctorById(id);
+}
+
+// Lets a rejected doctor resubmit for review — moves them back to
+// "pending" and clears the previous rejection reason.
+export function resubmitDoctorVerification(id: string): Doctor | undefined {
+  saveDoctorOverride(id, { verificationStatus: "pending", rejectionReason: undefined });
+  return getDoctorById(id);
 }
 
 // ---------- Patient profile (medical info, contact details) ----------

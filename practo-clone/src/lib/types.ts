@@ -5,6 +5,16 @@ export interface Specialty {
   description: string;
 }
 
+export type VerificationStatus = "pending" | "approved" | "rejected";
+
+export interface DoctorDocument {
+  id: string;
+  name: string;
+  /** e.g. "Medical License", "Degree Certificate", "Government ID" */
+  type: string;
+  uploadedAt: string;
+}
+
 export interface Doctor {
   id: string;
   slug: string;
@@ -23,6 +33,7 @@ export interface Doctor {
   languages: string[];
   about: string;
   photo: string;
+  /** Kept in sync with verificationStatus === "approved" — true only for approved doctors. */
   verified: boolean;
   nextAvailable: string;
   availableDays: string[];
@@ -34,6 +45,14 @@ export interface Doctor {
   slotDurationMinutes?: number;
   scheduleStart?: string;
   scheduleEnd?: string;
+  /** Whether the doctor's account is enabled — separate from verification. */
+  active?: boolean;
+  verificationStatus?: VerificationStatus;
+  /** Required whenever verificationStatus is "rejected". */
+  rejectionReason?: string;
+  documents?: DoctorDocument[];
+  /** ISO timestamp of when the doctor registered / was submitted for verification. */
+  registeredAt?: string;
 }
 
 export interface Review {

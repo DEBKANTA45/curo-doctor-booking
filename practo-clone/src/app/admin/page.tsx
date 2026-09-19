@@ -68,7 +68,7 @@ export default function AdminDashboardPage() {
   const upcoming = appointments.filter((a) => a.status === "upcoming");
   const completed = appointments.filter((a) => a.status === "completed");
   const cancelled = appointments.filter((a) => a.status === "cancelled");
-  const pendingVerifications = doctors.filter((d) => !d.verified);
+  const pendingVerifications = doctors.filter((d) => d.verificationStatus === "pending");
   const total = appointments.length;
 
   const stats = [
@@ -102,7 +102,8 @@ export default function AdminDashboardPage() {
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {stats.map((s) => (
-          <div key={s.label} className="card p-5">
+        // stat cards render mein:
+         <div key={s.label} className="card card-hover p-5">
             <span className="icon-tile-soft h-9 w-9">
               <s.icon size={16} />
             </span>

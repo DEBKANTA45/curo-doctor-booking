@@ -13,10 +13,13 @@ import {
   CalendarClock,
   BadgeCheck,
   ExternalLink,
+  AlertTriangle,
+  RefreshCcw,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { specialties } from "@/lib/utils";
-import { getCustomDoctorById, updateCustomDoctor } from "@/lib/mock-db";
+import { getCustomDoctorById, resubmitDoctorVerification, updateCustomDoctor } from "@/lib/mock-db";
+import StatusBadge from "@/components/admin/StatusBadge";
 import type { Doctor } from "@/lib/types";
 
 export default function DoctorProfilePage() {
@@ -35,6 +38,7 @@ export default function DoctorProfilePage() {
 
   const [notFoundInStore, setNotFoundInStore] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [resubmitted, setResubmitted] = useState(false);
 
   useEffect(() => {
     if (account?.role === "doctor") {
@@ -110,6 +114,14 @@ export default function DoctorProfilePage() {
     setTimeout(() => setSaved(false), 2500);
   };
 
+  const handleResubmit = () => {
+    const updated = resubmitDoctorVerification(account.doctorId);
+    if (updated) setRecord(updated);
+    refresh();
+    setResubmitted(true);
+    setTimeout(() => setResubmitted(false), 3000);
+  };
+
   return (
     <div className="mx-auto max-w-5xl px-5 py-10">
       {/* Header */}
@@ -139,6 +151,46 @@ export default function DoctorProfilePage() {
           </Link>
         )}
       </div>
+
+      {/* Verification status */}
+      {record && (
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-surface p-4">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-ink">Verification status</span>
+            <StatusBadge
+              label={
+                record.verificationStatus === "approved"
+                  ? "Approved"
+                  : record.verificationStatus === "rejected"
+                  ? "Rejected"
+                  : "Pending"
+              }
+            />
+          </div>
+
+          {record.verificationStatus === "rejected" && !resubmitted && (
+            <button onClick={handleResubmit} className="btn-secondary btn-sm flex items-center gap-1.5">
+              <RefreshCcw size={13} />
+              Resubmit for verification
+            </button>
+          )}
+          {resubmitted && (
+            <span className="text-xs font-medium text-success">
+              Resubmitted — now pending admin review.
+            </span>
+          )}
+        </div>
+      )}
+
+      {record?.verificationStatus === "rejected" && record.rejectionReason && !resubmitted && (
+        <div className="mt-3 flex items-start gap-2 rounded-lg border border-accent/30 bg-accent-light/40 p-3 text-sm text-accent">
+          <AlertTriangle size={15} className="mt-0.5 shrink-0" />
+          <div>
+            <p className="font-medium">Reason for rejection</p>
+            <p className="mt-0.5">{record.rejectionReason}</p>
+          </div>
+        </div>
+      )}
 
       {/* Body */}
       <div className="mt-9 grid gap-8 lg:grid-cols-[1fr_320px]">

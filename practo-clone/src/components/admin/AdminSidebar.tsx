@@ -20,8 +20,8 @@ import {
 
 export const adminNavItems = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard, ready: true },
-  { label: "Doctors", href: "/admin/doctors", icon: Stethoscope, ready: false },
-  { label: "Doctor Verification", href: "/admin/doctor-verification", icon: BadgeCheck, ready: false },
+  { label: "Doctors", href: "/admin/doctors", icon: Stethoscope, ready: true },
+  { label: "Doctor Verification", href: "/admin/doctor-verification", icon: BadgeCheck, ready: true },
   { label: "Patients", href: "/admin/patients", icon: Users, ready: false },
   { label: "Appointments", href: "/admin/appointments", icon: CalendarDays, ready: false },
   { label: "Payments", href: "/admin/payments", icon: CreditCard, ready: false },
@@ -44,13 +44,16 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <>
       <div className="flex h-16 shrink-0 items-center gap-2.5 border-b border-line px-5">
-        <span className="flex h-9 w-9 items-center justify-center rounded-md bg-brand-gradient text-white shadow-sm">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-brand-gradient text-white shadow-glow">
           <ShieldCheck size={18} />
         </span>
-        <span className="font-display text-base font-semibold text-ink">Curo Admin</span>
+        <div className="min-w-0 leading-tight">
+          <p className="truncate font-display text-base font-semibold text-ink">Curo Admin</p>
+          <p className="truncate text-[11px] font-medium text-faint">Admin Portal</p>
+        </div>
       </div>
 
-      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
+      <nav className="no-scrollbar flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
         {adminNavItems.map((item) => {
           const active = pathname === item.href;
           return (
@@ -58,16 +61,22 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               key={item.href}
               href={item.href}
               onClick={onNavigate}
-              className={`flex items-center gap-2.5 rounded-md border-l-2 px-3 py-2.5 text-sm font-medium transition-colors duration-150 ${
+              className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 active
-                  ? "border-primary bg-primary-light text-primary-dark"
-                  : "border-transparent text-muted hover:bg-bg hover:text-ink"
+                  ? "bg-primary-light text-primary-dark shadow-sm"
+                  : "text-muted hover:translate-x-0.5 hover:bg-bg hover:text-ink"
               }`}
             >
-              <item.icon size={16} className={active ? "text-primary" : "text-faint"} />
-              <span className="flex-1 text-left">{item.label}</span>
+              <span
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors ${
+                  active ? "bg-brand-gradient text-white shadow-sm" : "text-faint group-hover:text-ink"
+                }`}
+              >
+                <item.icon size={15} />
+              </span>
+              <span className="flex-1 truncate text-left">{item.label}</span>
               {!item.ready && (
-                <span className="rounded-full bg-bg px-1.5 py-0.5 text-[10px] font-medium text-faint">
+                <span className="shrink-0 rounded-full bg-bg px-1.5 py-0.5 text-[10px] font-medium text-faint">
                   Soon
                 </span>
               )}
@@ -75,6 +84,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           );
         })}
       </nav>
+
+      <div className="shrink-0 border-t border-line px-5 py-3">
+        <p className="text-[11px] text-faint">Curo &middot; Demo build</p>
+      </div>
     </>
   );
 }

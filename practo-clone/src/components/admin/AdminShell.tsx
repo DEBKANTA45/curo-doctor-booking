@@ -14,13 +14,13 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     return <>{children}</>;
   }
 
-  return (
-    <div className="flex min-h-screen bg-bg">
-      <AdminSidebar mobileOpen={mobileSidebarOpen} onCloseMobile={() => setMobileSidebarOpen(false)} />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <AdminHeader onOpenMobileSidebar={() => setMobileSidebarOpen(true)} />
-        <main className="flex-1 overflow-y-auto">{children}</main>
-      </div>
+ return (
+  <div className="flex h-screen overflow-hidden bg-bg">
+    <AdminSidebar mobileOpen={mobileSidebarOpen} onCloseMobile={() => setMobileSidebarOpen(false)} />
+    <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+      <AdminHeader onOpenMobileSidebar={() => setMobileSidebarOpen(true)} />
+      <main className="flex-1 overflow-y-auto">{children}</main>
     </div>
-  );
+  </div>
+);
 }

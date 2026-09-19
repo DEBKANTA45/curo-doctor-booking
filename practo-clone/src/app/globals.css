@@ -252,3 +252,12 @@ h3 {
     stroke-dashoffset: 0;
   }
 }
+
+/* Add anywhere at the top level (outside any @layer block), e.g. right after the @tailwind lines */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari, Opera */
+}
