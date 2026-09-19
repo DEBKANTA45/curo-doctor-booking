@@ -18,10 +18,14 @@ import {
   ClipboardList,
   Pill,
   Contact,
+  Video,
+  MapPin,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Appointment, PatientProfile } from "@/lib/types";
-import { getAppointmentById, completeAppointment, getPatientProfile } from "@/lib/mock-db";
+import { getAppointmentById, completeAppointment, getPatientProfile, getAllDoctors } from "@/lib/mock-db";
+import { getConsultationType, getAppointmentPhase, getPaymentMethodLabel } from "@/lib/consultation";
+import ConsultationBadge from "@/components/Consultationbadge";
 import { downloadPrescription } from "@/lib/utils";
 
 function todayIso() {
@@ -102,6 +106,10 @@ export default function ConsultPage({ params }: { params: { id: string } }) {
   const isCompleted = appointment.status === "completed";
   const isToday = appointment.date === todayIso();
   const canEdit = isCompleted || isToday;
+  const isOnline = getConsultationType(appointment) === "online";
+  const phase = getAppointmentPhase(appointment);
+  const paymentLabel = getPaymentMethodLabel(appointment);
+  const doctorClinic = getAllDoctors().find((d) => d.id === appointment.doctorId);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,6 +133,25 @@ export default function ConsultPage({ params }: { params: { id: string } }) {
         <ChevronLeft size={16} /> Back to dashboard
       </Link>
 
+      {isOnline && !isCompleted && (
+        <div className="mt-4 flex flex-col items-center gap-3 rounded-lg border border-cyan bg-cyan-light p-6 text-center sm:flex-row sm:justify-between sm:text-left">
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-cyan text-white">
+              <Video size={20} />
+            </span>
+            <div>
+              <p className="text-sm font-semibold text-cyan-dark">Online consultation in progress</p>
+              <p className="text-xs text-cyan-dark/80">
+                With {appointment.patientName} &middot; {appointment.time}
+              </p>
+            </div>
+          </div>
+          <div className="flex h-24 w-full items-center justify-center rounded-md bg-surface/60 text-xs text-cyan-dark sm:w-48">
+            (Mock video call)
+          </div>
+        </div>
+      )}
+
       <div className="mt-4 grid gap-8 lg:grid-cols-[1fr_300px]">
         <div>
           <div className="flex items-center justify-between">
@@ -132,14 +159,16 @@ export default function ConsultPage({ params }: { params: { id: string } }) {
               {appointment.patientName}
             </h1>
             <span
-              className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                isCompleted ? "bg-primary-light text-primary-dark" : "bg-accent-light text-accent"
-              }`}
+              className={`rounded-full px-2.5 py-1 text-xs font-medium ${isCompleted ? "bg-primary-light text-primary-dark" : "bg-accent-light text-accent"
+                }`}
             >
               {isCompleted ? "Completed" : "Pending"}
             </span>
           </div>
-          <p className="mt-1 text-sm text-muted">{appointment.reason}</p>
+          <div className="mt-2">
+            <ConsultationBadge type={isOnline ? "online" : "in-person"} phase={phase} hidePhaseWhenUpcoming={false} />
+          </div>
+          <p className="mt-2 text-sm text-muted">{appointment.reason}</p>
 
           {!canEdit && (
             <div className="mt-6 rounded-md border border-line bg-bg px-4 py-3">
@@ -199,7 +228,7 @@ export default function ConsultPage({ params }: { params: { id: string } }) {
                   type="submit"
                   className="rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-dark"
                 >
-                  {isCompleted ? "Save changes" : "Complete consultation"}
+                  {isCompleted ? "Save changes" : isOnline ? "End Consultation" : "Complete consultation"}
                 </button>
               )}
               {isCompleted && (
@@ -236,10 +265,27 @@ export default function ConsultPage({ params }: { params: { id: string } }) {
                 <Clock size={14} className="text-muted" />
                 {appointment.date} &middot; {appointment.time}
               </div>
+              {!isOnline && doctorClinic && (
+                <div className="flex items-start gap-1.5 text-ink">
+                  <MapPin size={14} className="mt-0.5 shrink-0 text-muted" />
+                  <span>
+                    {doctorClinic.clinicName}
+                    {doctorClinic.locality ? `, ${doctorClinic.locality}` : ""}, {doctorClinic.city}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-muted">Fee</span>
                 <span className="font-tabular text-ink">₹{appointment.fee}</span>
               </div>
+              {paymentLabel && (
+                <div className="flex justify-between">
+                  <span className="text-muted">Paid via</span>
+                  <span className="rounded-full bg-success-light px-2 py-0.5 text-xs font-medium text-success">
+                    {paymentLabel}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 

@@ -3,10 +3,11 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { CheckCircle2, ChevronLeft, Sunrise, Sun, Sunset, CalendarDays, BadgeCheck, MapPin, Globe2, CreditCard, Lock, Loader2, Clock, X } from "lucide-react";
+import { CheckCircle2, ChevronLeft, Sunrise, Sun, Sunset, CalendarDays, BadgeCheck, MapPin, Globe2, CreditCard, Lock, Loader2, Clock, X, Video } from "lucide-react";
 import { useDoctorBySlug } from "@/lib/hooks";
 import { useAuth } from "@/context/AuthContext";
 import { createAppointment, getRatingSummary, getAllReviewsForDoctor, isSlotTaken } from "@/lib/mock-db";
+import { ConsultationType } from "@/lib/types";
 import RatingStars from "@/components/RatingStars";
 
 const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -50,9 +51,6 @@ function describeDate(iso: string) {
   return { label: formatShort(date), sublabel: "" };
 }
 
-// Today, Tomorrow, and a few more upcoming days the doctor is actually
-// available — scans forward so the row never comes up short even if the
-// doctor skips a day or two.
 function buildQuickDays(availableDays: string[], minDate: Date, maxDate: Date, count = 4) {
   const out: string[] = [];
   const cursor = new Date(minDate);
@@ -65,9 +63,6 @@ function buildQuickDays(availableDays: string[], minDate: Date, maxDate: Date, c
   return out;
 }
 
-// Calendar for one month at a time — month is selectable, but only within
-// the CURRENT year (no year navigation). Past days and weekdays the doctor
-// doesn't work are disabled.
 function buildMonthDays(monthIndex: number, year: number, availableDays: string[], minDate: Date, maxDate: Date) {
   const lastDay = new Date(year, monthIndex + 1, 0).getDate();
 
@@ -81,7 +76,6 @@ function buildMonthDays(monthIndex: number, year: number, availableDays: string[
   return { days, leadingBlanks: new Date(year, monthIndex, 1).getDay() };
 }
 
-// Parses "10:00 AM" / "02:30 PM" into a 24-hour hour value.
 function parseSlotHour(slot: string): number {
   const [time, period] = slot.split(" ");
   const [hourStr] = time.split(":");
@@ -90,8 +84,6 @@ function parseSlotHour(slot: string): number {
   return hour;
 }
 
-// Morning: before noon. Afternoon: noon to before 4pm. Evening: 4pm onward.
-// (A plain AM/PM split was lumping 12–4pm into "evening", which read wrong.)
 function groupSlots(slots: string[]) {
   const morning: string[] = [];
   const afternoon: string[] = [];
@@ -104,8 +96,7 @@ function groupSlots(slots: string[]) {
   }
   return { morning, afternoon, evening };
 }
-// The doctor's own "open for booking" start/end dates, clamped so it never
-// starts before today and never runs past the current year on the calendar.
+
 function computeBookableRange(
   scheduleStart: string | undefined,
   scheduleEnd: string | undefined,
@@ -158,6 +149,7 @@ export default function BookAppointmentPage({
 
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
+  const [consultationType, setConsultationType] = useState<ConsultationType>("in-person");
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(currentMonth);
   const [reason, setReason] = useState("");
@@ -245,6 +237,17 @@ export default function BookAppointmentPage({
           <p className="mt-2 text-sm text-muted">
             {doctor.name} &middot; {info.label}{info.sublabel ? ` (${info.sublabel})` : ""} at {selectedTime}
           </p>
+          <p className="mt-1 flex items-center justify-center gap-1.5 text-xs font-medium text-primary">
+            {consultationType === "online" ? (
+              <>
+                <Video size={13} /> Online consultation
+              </>
+            ) : (
+              <>
+                <MapPin size={13} /> In-person at {doctor.clinicName}
+              </>
+            )}
+          </p>
           <div className="mt-6 flex flex-col gap-3">
             <Link
               href="/appointments"
@@ -317,6 +320,8 @@ export default function BookAppointmentPage({
         time: selectedTime,
         fee: doctor.consultationFee,
         reason: reason.trim() || "General consultation",
+        consultationType,
+        paymentMethod,
       });
       setProcessingPayment(false);
       setConfirmed(true);
@@ -342,6 +347,17 @@ export default function BookAppointmentPage({
           </h1>
           <p className="mt-1.5 text-sm text-muted">
             {doctor.name} &middot; {selectedInfo?.label}{selectedInfo?.sublabel ? ` (${selectedInfo.sublabel})` : ""} at {selectedTime}
+          </p>
+          <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-primary">
+            {consultationType === "online" ? (
+              <>
+                <Video size={13} /> Online consultation
+              </>
+            ) : (
+              <>
+                <MapPin size={13} /> In-person at {doctor.clinicName}
+              </>
+            )}
           </p>
 
           <div className="mt-5 flex items-center justify-between rounded-md bg-bg px-4 py-3 text-sm">
@@ -591,13 +607,7 @@ export default function BookAppointmentPage({
               </p>
             </div>
           )}
-
-          
-
-
-
-
-              </div>
+        </div>
 
         <div className="rounded-lg border border-line bg-surface p-6">
           <h2 className="font-display text-lg font-semibold text-ink">
@@ -626,7 +636,74 @@ export default function BookAppointmentPage({
 
         {/* RIGHT — date, slot, and confirmation */}
         <div className="rounded-lg border border-line bg-surface p-6 lg:sticky lg:top-24 lg:h-fit">
-          <p className="text-sm font-medium text-ink">Choose a day</p>
+          <p className="text-sm font-medium text-ink">Consultation type</p>
+          <div className="mt-2.5 flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => setConsultationType("online")}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-3 text-sm font-semibold transition-colors ${
+                consultationType === "online"
+                  ? "bg-primary text-white shadow-sm"
+                  : "border border-line text-ink hover:border-primary"
+              }`}
+            >
+              <Video size={16} /> Book a Video Appointment
+            </button>
+            <button
+              type="button"
+              onClick={() => setConsultationType("in-person")}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-3 text-sm font-semibold transition-colors ${
+                consultationType === "in-person"
+                  ? "bg-primary text-white shadow-sm"
+                  : "border border-line text-ink hover:border-primary"
+              }`}
+            >
+              <MapPin size={16} /> Book an In-Clinic Visit
+            </button>
+          </div>
+          <p className="mt-2 text-xs text-faint">
+            {consultationType === "online"
+              ? "You'll get a link to join from your appointments page."
+              : `Visit ${doctor.clinicName}${doctor.locality ? `, ${doctor.locality}` : ""}, ${doctor.city}.`}
+          </p>
+
+          <p className="mt-5 text-sm font-medium text-ink">Consultation fees</p>
+          <div className="mt-2.5 overflow-hidden rounded-md border border-line">
+            <div
+              className={`flex items-center justify-between px-4 py-3 transition-colors ${
+                consultationType === "online" ? "bg-primary-light" : "bg-surface"
+              }`}
+            >
+              <span className="flex items-center gap-2 text-sm text-ink">
+                <Video size={14} className="text-muted" /> Video Consultation
+              </span>
+              <span
+                className={`font-tabular text-base font-semibold ${
+                  consultationType === "online" ? "text-primary" : "text-ink"
+                }`}
+              >
+                ₹{doctor.consultationFee}
+              </span>
+            </div>
+            <div
+              className={`flex items-center justify-between border-t border-line px-4 py-3 transition-colors ${
+                consultationType === "in-person" ? "bg-primary-light" : "bg-surface"
+              }`}
+            >
+              <span className="flex items-center gap-2 text-sm text-ink">
+                <MapPin size={14} className="text-muted" /> In-Clinic Visit
+              </span>
+              <span
+                className={`font-tabular text-base font-semibold ${
+                  consultationType === "in-person" ? "text-primary" : "text-ink"
+                }`}
+              >
+                ₹{doctor.consultationFee}
+              </span>
+            </div>
+          </div>
+
+          <p className="mt-6 text-sm font-medium text-ink">Choose a day</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {quickDays.map((date) => {
               const info = describeDate(date);
@@ -781,6 +858,12 @@ export default function BookAppointmentPage({
 
           <div className="mt-6 space-y-2 border-t border-line pt-5 text-sm">
             <div className="flex justify-between">
+              <span className="text-muted">Consultation type</span>
+              <span className="text-ink">
+                {consultationType === "online" ? "Online" : "In-person"}
+              </span>
+            </div>
+            <div className="flex justify-between">
               <span className="text-muted">Day</span>
               <span className="text-ink">{selectedInfo?.label ?? "—"}</span>
             </div>
@@ -799,8 +882,8 @@ export default function BookAppointmentPage({
           >
             Proceed to payment
           </button>
-               </div>
-           </div>
+        </div>
+      </div>
     </div>
   );
 }

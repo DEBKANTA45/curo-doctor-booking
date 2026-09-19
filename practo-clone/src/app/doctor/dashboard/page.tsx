@@ -1,21 +1,32 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   CalendarX2,
   User,
   ChevronRight,
+  ChevronDown,
   X,
   CalendarDays,
   Clock,
   CheckCircle2,
   XCircle,
+  Video,
+  MapPin,
+  Timer,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Appointment } from "@/lib/types";
 import { getAppointmentsForDoctor, getCustomDoctorById, rescheduleAppointment } from "@/lib/mock-db";
+import ConsultationBadge from "@/components/Consultationbadge";
+import {
+  getConsultationType,
+  getAppointmentPhase,
+  getPaymentMethodLabel,
+  formatCountdown,
+} from "@/lib/consultation";
 import toast from "react-hot-toast";
 function todayIso() {
   const d = new Date();
@@ -119,6 +130,27 @@ export default function DoctorDashboardPage() {
   const [dateFilter, setDateFilter] = useState(todayIso());
   const [openRescheduleId, setOpenRescheduleId] = useState<string | null>(null);
   const [myAvailableDays, setMyAvailableDays] = useState<string[] | null>(null);
+  const [now, setNow] = useState(() => new Date());
+  const [tabMenuOpen, setTabMenuOpen] = useState(false);
+  const tabMenuRef = useRef<HTMLDivElement>(null);
+
+  // Closes the status dropdown when clicking anywhere outside it.
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (tabMenuRef.current && !tabMenuRef.current.contains(e.target as Node)) {
+        setTabMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Ticks once a second so "Starting soon" → "Live" and the countdown
+  // stay current without the doctor needing to refresh.
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const refreshAppointments = () => {
     if (account?.role === "doctor") {
@@ -186,6 +218,7 @@ export default function DoctorDashboardPage() {
     { key: "completed", label: "Completed", count: completed.length, icon: CheckCircle2 },
     { key: "cancelled", label: "Cancelled", count: cancelled.length, icon: XCircle },
   ];
+  const activeNavItem = navItems.find((item) => item.key === tab) ?? navItems[0];
 
   const activeList = tab === "pending" ? pending : tab === "completed" ? completed : cancelled;
   const emptyLabel =
@@ -219,47 +252,72 @@ export default function DoctorDashboardPage() {
         </div>
       </div>
 
-      <div className="mt-6 grid gap-5 md:grid-cols-[210px_1fr] md:items-start">
-        <nav className="flex gap-2 overflow-x-auto pb-1 md:sticky md:top-20 md:flex-col md:gap-1.5 md:overflow-visible md:pb-0">
-          {navItems.map((item) => {
-            const isActive = tab === item.key;
-            return (
-              <button
-                key={item.key}
-                onClick={() => {
-                  setTab(item.key);
-                  setOpenRescheduleId(null);
-                }}
-                className={`flex shrink-0 items-center gap-2.5 rounded-md border px-3.5 py-2.5 text-sm font-medium transition-colors md:w-full ${
-                  isActive
-                    ? "border-primary/30 bg-primary-light text-primary-dark shadow-card"
-                    : "border-line bg-surface text-muted hover:border-primary/30 hover:text-ink"
-                }`}
-              >
-                <item.icon size={16} />
-                <span className="flex-1 text-left">{item.label}</span>
-                <span
-                  className={`font-tabular text-xs ${isActive ? "text-primary-dark" : "text-faint"}`}
-                >
-                  {item.count}
-                </span>
-              </button>
-            );
-          })}
-        </nav>
+      <div className="relative mt-6" ref={tabMenuRef}>
+        <button
+          onClick={() => setTabMenuOpen((v) => !v)}
+          className="flex items-center gap-2.5 rounded-md border border-line bg-surface px-4 py-2.5 text-sm font-medium text-ink shadow-card transition-colors hover:border-primary/30"
+        >
+          <activeNavItem.icon size={16} className="text-primary" />
+          {activeNavItem.label}
+          <span className="font-tabular text-xs text-faint">{activeNavItem.count}</span>
+          <ChevronDown
+            size={15}
+            className={`text-faint transition-transform ${tabMenuOpen ? "rotate-180" : ""}`}
+          />
+        </button>
 
-        <div>
-          {activeList.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-line py-14 text-center">
-              <CalendarX2 className="text-faint" size={26} />
-              <p className="text-sm text-muted">
-                {dateFilter ? `No ${emptyLabel} on this date.` : `No ${emptyLabel}.`}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {tab === "pending" &&
-                pending.map((a) => (
+        {tabMenuOpen && (
+          <div className="absolute left-0 top-full z-20 mt-1.5 w-56 rounded-md border border-line bg-surface p-1.5 shadow-soft">
+            {navItems.map((item) => {
+              const isActive = tab === item.key;
+              return (
+                <button
+                  key={item.key}
+                  onClick={() => {
+                    setTab(item.key);
+                    setOpenRescheduleId(null);
+                    setTabMenuOpen(false);
+                  }}
+                  className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
+                    isActive
+                      ? "bg-primary-light text-primary-dark"
+                      : "text-muted hover:bg-bg hover:text-ink"
+                  }`}
+                >
+                  <item.icon size={16} />
+                  <span className="flex-1 text-left">{item.label}</span>
+                  <span
+                    className={`font-tabular text-xs ${isActive ? "text-primary-dark" : "text-faint"}`}
+                  >
+                    {item.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="mt-4">
+        {activeList.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-line py-14 text-center">
+            <CalendarX2 className="text-faint" size={26} />
+            <p className="text-sm text-muted">
+              {dateFilter ? `No ${emptyLabel} on this date.` : `No ${emptyLabel}.`}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {tab === "pending" &&
+              pending.map((a) => {
+                const type = getConsultationType(a);
+                const phase = getAppointmentPhase(a, now);
+                const isOnline = type === "online";
+                const canStart = isOnline && (phase === "starting-soon" || phase === "live");
+                const countdown = isOnline ? formatCountdown(a, now) : null;
+                const paymentLabel = getPaymentMethodLabel(a);
+
+                return (
                   <div
                     key={a.id}
                     className="card card-hover p-4"
@@ -283,6 +341,7 @@ export default function DoctorDashboardPage() {
                           </span>
                           <span className="text-sm font-medium text-ink">{a.patientName}</span>
                         </span>
+                        <ConsultationBadge type={type} phase={phase} />
                         <span className="hidden text-xs text-muted sm:inline">{a.reason}</span>
                       </button>
                       <div className="flex items-center gap-2">
@@ -290,8 +349,33 @@ export default function DoctorDashboardPage() {
                           <p className="font-tabular">
                             {a.date} &middot; {a.time}
                           </p>
-                          <p className="text-xs text-muted">₹{a.fee}</p>
+                          <p className="flex items-center justify-end gap-1.5 text-xs text-muted">
+                            {isOnline && countdown && (
+                              <span className="flex items-center gap-1 text-primary">
+                                <Timer size={11} /> {countdown}
+                              </span>
+                            )}
+                            <span>₹{a.fee}</span>
+                            {paymentLabel && (
+                              <span className="rounded-full bg-success-light px-1.5 py-0.5 text-[10px] font-medium text-success">
+                                Paid
+                              </span>
+                            )}
+                          </p>
                         </div>
+                        {isOnline && (
+                          <button
+                            onClick={() => canStart && router.push(`/doctor/consult/${a.id}`)}
+                            disabled={!canStart}
+                            className={`shrink-0 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                              canStart
+                                ? "bg-primary text-white hover:bg-primary-dark"
+                                : "cursor-not-allowed border border-line bg-bg text-faint"
+                            }`}
+                          >
+                            Start Consultation
+                          </button>
+                        )}
                         <button
                           onClick={() =>
                             setOpenRescheduleId(openRescheduleId === a.id ? null : a.id)
@@ -317,59 +401,59 @@ export default function DoctorDashboardPage() {
                       />
                     )}
                   </div>
-                ))}
+                );
+              })}
 
-              {tab === "completed" &&
-                completed.map((a) => (
-                  <Link
-                    key={a.id}
-                    href={`/doctor/consult/${a.id}`}
-                    className="card card-hover flex items-center justify-between gap-3 p-4"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="icon-tile-soft h-9 w-9">
-                        <User size={16} />
-                      </span>
-                      <div>
-                        <p className="text-sm font-medium text-ink">{a.patientName}</p>
-                        <p className="text-xs text-muted">{a.diagnosis || "No diagnosis recorded"}</p>
-                      </div>
+            {tab === "completed" &&
+              completed.map((a) => (
+                <Link
+                  key={a.id}
+                  href={`/doctor/consult/${a.id}`}
+                  className="card card-hover flex items-center justify-between gap-3 p-4"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="icon-tile-soft h-9 w-9">
+                      <User size={16} />
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium text-ink">{a.patientName}</p>
+                      <p className="text-xs text-muted">{a.diagnosis || "No diagnosis recorded"}</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="text-right text-sm text-ink">
-                        <p className="font-tabular">
-                          {a.date} &middot; {a.time}
-                        </p>
-                        <p className="text-xs text-muted">₹{a.fee}</p>
-                      </div>
-                      <ChevronRight size={16} className="text-faint" />
-                    </div>
-                  </Link>
-                ))}
-
-              {tab === "cancelled" &&
-                cancelled.map((a) => (
-                  <div
-                    key={a.id}
-                    className="flex items-center justify-between gap-3 rounded-lg border border-line bg-bg p-4 opacity-80"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-light text-accent">
-                        <User size={16} />
-                      </span>
-                      <div>
-                        <p className="text-sm font-medium text-ink">{a.patientName}</p>
-                        <p className="text-xs text-muted">{a.reason}</p>
-                      </div>
-                    </div>
-                    <p className="font-tabular text-sm text-ink">
-                      {a.date} &middot; {a.time}
-                    </p>
                   </div>
-                ))}
-            </div>
-          )}
-        </div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-right text-sm text-ink">
+                      <p className="font-tabular">
+                        {a.date} &middot; {a.time}
+                      </p>
+                      <p className="text-xs text-muted">₹{a.fee}</p>
+                    </div>
+                    <ChevronRight size={16} className="text-faint" />
+                  </div>
+                </Link>
+              ))}
+
+            {tab === "cancelled" &&
+              cancelled.map((a) => (
+                <div
+                  key={a.id}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-line bg-bg p-4 opacity-80"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-light text-accent">
+                      <User size={16} />
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium text-ink">{a.patientName}</p>
+                      <p className="text-xs text-muted">{a.reason}</p>
+                    </div>
+                  </div>
+                  <p className="font-tabular text-sm text-ink">
+                    {a.date} &middot; {a.time}
+                  </p>
+                </div>
+              ))}
+          </div>
+        )}
       </div>
     </div>
   );

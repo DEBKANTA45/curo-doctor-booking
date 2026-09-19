@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-
 import {
   CalendarX2,
   CalendarClock,
@@ -17,20 +16,30 @@ import {
   Star,
   UserRound,
   LogOut,
+  Video,
+  MapPin,
+  Timer,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Appointment, Notification } from "@/lib/types";
 import {
-  getAppointmentsForPatient,
   cancelAppointment,
+  getAppointmentsForPatient,
   getNotifications,
   markAllNotificationsRead,
   dismissNotification,
   hasReviewedAppointment,
   addReview,
+  getAllDoctors,
 } from "@/lib/mock-db";
 import { downloadPrescription } from "@/lib/utils";
 import StarPicker from "@/components/StarPicker";
+import ConsultationBadge from "@/components/Consultationbadge";
+import {
+  getConsultationType,
+  getAppointmentPhase,
+  formatCountdown,
+} from "@/lib/consultation";
 
 type Tab = "upcoming" | "completed" | "cancelled";
 
@@ -45,22 +54,28 @@ export default function AppointmentsPage() {
   const [openReviewId, setOpenReviewId] = useState<string | null>(null);
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewComment, setReviewComment] = useState("");
+  const [now, setNow] = useState(() => new Date());
+  const [consultationModal, setConsultationModal] = useState<Appointment | null>(null);
+  const [locationModal, setLocationModal] = useState<Appointment | null>(null);
 
-    useEffect(() => {
+  // Ticks once a second so phase/countdown ("Starting soon", "12m 04s")
+  // update live without the patient needing to refresh the page.
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
     if (account?.role === "patient") {
-      setAppointments(getAppointmentsForPatient(account.email));
+      const list = getAppointmentsForPatient(account.email);
+      setAppointments(list);
       setNotifications(getNotifications(account.email));
       markAllNotificationsRead(account.email);
+      setReviewedIds(
+        new Set(list.filter((a) => hasReviewedAppointment(a.id)).map((a) => a.id))
+      );
     }
   }, [account, pathname]);
-
-  // Recomputed whenever the Redux appointment list changes (initial load,
-  // a fresh cancel, etc.) rather than only once at fetch time.
-  useEffect(() => {
-    setReviewedIds(
-      new Set(appointments.filter((a) => hasReviewedAppointment(a.id)).map((a) => a.id))
-    );
-  }, [appointments]);
 
   const handleDismissNotification = (id: string) => {
     dismissNotification(id);
@@ -87,7 +102,7 @@ export default function AppointmentsPage() {
     setOpenReviewId(null);
   };
 
-   const handleCancel = (id: string) => {
+  const handleCancel = (id: string) => {
     cancelAppointment(id, "patient");
     if (account?.role === "patient") {
       setAppointments(getAppointmentsForPatient(account.email));
@@ -269,34 +284,68 @@ export default function AppointmentsPage() {
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
-                  {upcoming.map((a) => (
-                    <div
-                      key={a.id}
-                      className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4 sm:flex-row sm:items-center sm:justify-between"
-                    >
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <Stethoscope size={15} className="text-primary" />
-                          <p className="text-sm font-medium text-ink">{a.doctorName}</p>
+                  {upcoming.map((a) => {
+                    const type = getConsultationType(a);
+                    const phase = getAppointmentPhase(a, now);
+                    const countdown = type === "online" ? formatCountdown(a, now) : null;
+                    const canJoin = type === "online" && (phase === "starting-soon" || phase === "live");
+                    const clinic = getAllDoctors().find((d) => d.id === a.doctorId);
+                    return (
+                      <div
+                        key={a.id}
+                        className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Stethoscope size={15} className="text-primary" />
+                            <p className="text-sm font-medium text-ink">{a.doctorName}</p>
+                           <ConsultationBadge type={type} phase={phase} />
+                          </div>
+                          <p className="mt-1 text-xs text-muted">{a.doctorSpecialty}</p>
+                          <p className="mt-2 flex items-center gap-1.5 text-sm text-ink">
+                            <Clock size={14} className="text-muted" />
+                            {a.date} &middot; {a.time}
+                          </p>
+                          <p className="mt-1 text-xs text-faint">{a.reason}</p>
+                          {type === "online" && countdown && (
+                            <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-primary">
+                              <Timer size={12} /> Starts in {countdown}
+                            </p>
+                          )}
                         </div>
-                        <p className="mt-1 text-xs text-muted">{a.doctorSpecialty}</p>
-                        <p className="mt-2 flex items-center gap-1.5 text-sm text-ink">
-                          <Clock size={14} className="text-muted" />
-                          {a.date} &middot; {a.time}
-                        </p>
-                        <p className="mt-1 text-xs text-faint">{a.reason}</p>
+                        <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-2">
+                          <span className="font-tabular text-sm font-medium text-ink">₹{a.fee}</span>
+                          {type === "online" ? (
+                            <button
+                              onClick={() => canJoin && setConsultationModal(a)}
+                              disabled={!canJoin}
+                              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${canJoin
+                                  ? "bg-primary text-white hover:bg-primary-dark"
+                                  : "cursor-not-allowed border border-line bg-bg text-faint"
+                                }`}
+                            >
+                              Join Consultation
+                            </button>
+                          ) : (
+                            clinic && (
+                              <button
+                                onClick={() => setLocationModal(a)}
+                                className="rounded-md border border-line px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-primary"
+                              >
+                                View Location
+                              </button>
+                            )
+                          )}
+                          <button
+                            onClick={() => handleCancel(a.id)}
+                            className="rounded-md border border-line px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:border-accent hover:bg-accent-light"
+                          >
+                            Cancel
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-2">
-                        <span className="font-tabular text-sm font-medium text-ink">₹{a.fee}</span>
-                        <button
-                          onClick={() => handleCancel(a.id)}
-                          className="rounded-md border border-line px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:border-accent hover:bg-accent-light"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </>
@@ -425,6 +474,73 @@ export default function AppointmentsPage() {
           </div>
         </div>
       </div>
+
+      {consultationModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4"
+          onClick={() => setConsultationModal(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-xl border border-line bg-surface p-6 text-center shadow-soft"
+          >
+            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-cyan-light text-cyan-dark">
+              <Video size={24} />
+            </span>
+            <h3 className="mt-4 font-display text-lg font-semibold text-ink">
+              You're in the consultation
+            </h3>
+            <p className="mt-1.5 text-sm text-muted">
+              With {consultationModal.doctorName} &middot; {consultationModal.time}
+            </p>
+            <div className="mt-6 flex h-40 items-center justify-center rounded-md bg-bg text-sm text-faint">
+              (Mock video call — no real video connects here)
+            </div>
+            <button
+              onClick={() => setConsultationModal(null)}
+              className="mt-5 w-full rounded-md border border-line px-4 py-2.5 text-sm font-medium text-ink hover:border-accent hover:bg-accent-light hover:text-accent"
+            >
+              Leave consultation
+            </button>
+          </div>
+        </div>
+      )}
+
+      {locationModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4"
+          onClick={() => setLocationModal(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-xl border border-line bg-surface p-6 shadow-soft"
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="font-display text-lg font-semibold text-ink">Clinic location</h3>
+              <button
+                onClick={() => setLocationModal(null)}
+                aria-label="Close"
+                className="flex h-8 w-8 items-center justify-center rounded-md text-muted hover:bg-bg hover:text-ink"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            {(() => {
+              const clinic = getAllDoctors().find((d) => d.id === locationModal.doctorId);
+              if (!clinic) return <p className="mt-3 text-sm text-muted">Location details unavailable.</p>;
+              return (
+                <div className="mt-3 flex items-start gap-2 text-sm text-ink">
+                  <MapPin size={16} className="mt-0.5 shrink-0 text-primary" />
+                  <span>
+                    {clinic.clinicName}
+                    {clinic.locality ? `, ${clinic.locality}` : ""}, {clinic.city}
+                  </span>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
