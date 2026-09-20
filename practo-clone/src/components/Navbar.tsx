@@ -18,6 +18,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 const patientLinks = [
   { href: "/", label: "Home" },
   { href: "/doctors", label: "Find Doctors" },
+  { href: "/video-consult", label: "Video Consult" },
 ];
 
 const signedInPatientLinks = [
@@ -127,15 +128,15 @@ export default function Navbar() {
             )}
           </Link>
 
-          <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 rounded-md border border-line bg-bg p-1 md:flex" aria-label="Primary navigation">
+          <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-7 md:flex" aria-label="Primary navigation">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 aria-current={pathname === link.href ? "page" : undefined}
-                className={`flex items-center rounded-sm px-4 py-1.5 text-sm font-medium transition-[background-color,color] duration-150 ease-out active:scale-[0.97] ${pathname === link.href
-                  ? "bg-primary-light text-primary-dark"
-                  : "text-muted hover:bg-primary-light hover:text-primary-dark"
+                className={`flex items-center border-b-2 pb-1 text-sm font-medium transition-colors duration-150 ease-out ${pathname === link.href
+                  ? "border-primary text-primary-dark"
+                  : "border-transparent text-muted hover:text-ink"
                   }`}
               >
                 {link.label}

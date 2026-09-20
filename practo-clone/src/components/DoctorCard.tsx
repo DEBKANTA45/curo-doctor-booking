@@ -1,77 +1,63 @@
 import Image from "next/image";
 import Link from "next/link";
-import {
-  BadgeCheck,
-  MapPin,
-  ArrowRight,
-  Zap,
-  Languages as LanguagesIcon,
-} from "lucide-react";
+import { MapPin, Video, Home as HomeIcon, CalendarClock, MessageCircle, Star } from "lucide-react";
 import { Doctor } from "@/lib/types";
 import RatingStars from "./RatingStars";
+import StatusBadge from "@/components/admin/StatusBadge";
 
-// Today / Tomorrow gets its own colour so it reads instantly in a scanning
-// list; anything further out still shows the exact day, just muted.
-function getAvailability(doctor: Doctor) {
-  if (doctor.nextAvailable === "Today") {
-    return { label: "Available today", dot: "bg-success", text: "text-success" };
-  }
-  if (doctor.nextAvailable === "Tomorrow") {
-    return { label: "Available tomorrow", dot: "bg-primary", text: "text-primary" };
-  }
-  return {
-    label: `Available ${doctor.nextAvailable}`,
-    dot: "bg-cyan-dark",
-    text: "text-cyan-dark",
-  };
+// The app doesn't track separate online vs in-clinic schedules — patients
+// choose the consultation type at booking time, and either type draws from
+// the same slot list. So both availability pills show this same next slot,
+// just labeled differently.
+function nextAvailableText(doctor: Doctor) {
+  const slot = doctor.slots?.[0];
+  return slot ? `${doctor.nextAvailable}, ${slot} (IST)` : doctor.nextAvailable;
 }
 
-// Below this many open slots, scarcity is worth calling out — it's the single
-// biggest nudge to book now instead of "checking a few more doctors" first.
-const LIMITED_SLOT_THRESHOLD = 3;
-
 export default function DoctorCard({ doctor }: { doctor: Doctor }) {
-  const availability = getAvailability(doctor);
-  const slotCount = doctor.slots?.length ?? 0;
-  const isLimited = slotCount > 0 && slotCount <= LIMITED_SLOT_THRESHOLD;
-  const visibleSlots = doctor.slots?.slice(0, 3) ?? [];
-  const extraSlots = slotCount - visibleSlots.length;
+  const availableText = nextAvailableText(doctor);
 
   return (
-    <div className="card card-hover flex flex-col gap-5 p-5 sm:flex-row sm:items-start">
-      <Link href={`/doctors/${doctor.slug}`} className="mx-auto shrink-0 sm:mx-0">
-        <div className="relative h-20 w-20 overflow-hidden rounded-full border-2 border-white shadow-sm ring-1 ring-line transition-shadow duration-150 hover:ring-primary/40 sm:h-24 sm:w-24">
+    <div className="card card-hover flex flex-col gap-4 p-5 sm:flex-row sm:items-stretch sm:gap-5">
+      <Link href={`/doctors/${doctor.slug}`} className="relative shrink-0 self-center">
+        <div className="relative h-28 w-28 overflow-hidden rounded-xl border border-line sm:h-32 sm:w-32">
           <Image
             src={doctor.photo}
             alt={doctor.name}
             fill
-            sizes="96px"
+            sizes="128px"
             className="object-cover"
           />
         </div>
+        <span className="absolute bottom-1.5 left-1.5 rounded-md bg-ink/75 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
+          {doctor.experienceYears} years exp
+        </span>
       </Link>
 
-      <div className="min-w-0 flex-1 text-center sm:text-left">
-        <div className="flex flex-wrap items-center justify-center gap-1.5 sm:justify-start">
+      {/* Identity */}
+      <div className="min-w-0 flex-1 self-center">
+        {doctor.featured && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
+            <Star size={11} className="fill-amber-500 text-amber-500" />
+            Featured Doctor
+          </span>
+        )}
+
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
           <Link
             href={`/doctors/${doctor.slug}`}
             className="font-display text-base font-semibold text-ink transition-colors hover:text-primary"
           >
             {doctor.name}
           </Link>
-          {doctor.verified && (
-            <BadgeCheck size={16} className="text-primary" aria-label="Verified" />
-          )}
+          {doctor.verified && <StatusBadge label="Verified" />}
         </div>
-        <p className="mt-0.5 text-sm text-muted">
-          {doctor.specialty} &middot; {doctor.qualifications}
-        </p>
-        <p className="mt-0.5 text-sm text-faint">
-          {doctor.experienceYears} years experience
-        </p>
+
+        <p className="mt-0.5 text-sm text-muted">{doctor.qualifications}</p>
+        <p className="mt-0.5 text-sm font-semibold text-ink">{doctor.specialty}</p>
 
         {doctor.reviewCount > 0 && (
-          <div className="mt-2 flex items-center justify-center gap-2 sm:justify-start">
+          <div className="mt-2 flex items-center gap-2">
             <RatingStars rating={doctor.rating} />
             <span className="font-tabular text-xs text-muted">
               {doctor.rating} ({doctor.reviewCount})
@@ -79,61 +65,46 @@ export default function DoctorCard({ doctor }: { doctor: Doctor }) {
           </div>
         )}
 
-        <p className="mt-2 flex items-center justify-center gap-1 text-sm text-muted sm:justify-start">
+        <p className="mt-2 flex items-center gap-1 text-sm text-muted">
           <MapPin size={14} className="shrink-0 text-cyan-dark" />
-          {doctor.clinicName}, {doctor.locality ? `${doctor.locality}, ` : ""}{doctor.city}
+          {doctor.clinicName}, {doctor.locality ? `${doctor.locality}, ` : ""}
+          {doctor.city}
         </p>
 
         {doctor.languages?.length > 0 && (
-          <p className="mt-1.5 flex items-center justify-center gap-1 text-xs text-faint sm:justify-start">
-            <LanguagesIcon size={12} className="shrink-0" />
-            Speaks {doctor.languages.slice(0, 3).join(", ")}
+          <p className="mt-1.5 flex items-center gap-1.5 text-xs text-faint">
+            <MessageCircle size={13} className="shrink-0 text-cyan-dark" />
+            {doctor.languages.slice(0, 3).join(", ")}
           </p>
         )}
       </div>
 
-      <div className="flex shrink-0 flex-col gap-3 border-t border-line pt-4 sm:w-52 sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0">
-        <div className="flex items-center gap-1.5 text-sm font-medium">
-          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${availability.dot}`} />
-          <span className={availability.text}>{availability.label}</span>
+      {/* RIGHT — availability + fee + CTAs */}
+      <div className="flex shrink-0 flex-col gap-3 border-t border-line pt-4 sm:w-64 sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0">
+        <p className="flex items-center gap-1.5 text-sm font-semibold text-amber-600">
+          <CalendarClock size={15} />
+          Next Available
+        </p>
+
+        <div className="flex flex-col gap-1.5">
+          <span className="flex items-center gap-1.5 rounded-md border border-cyan/30 bg-cyan-light px-2.5 py-1.5 text-xs font-medium text-cyan-dark">
+            <Video size={13} className="shrink-0" />
+            Online &middot; {availableText}
+          </span>
+          <span className="flex items-center gap-1.5 rounded-md border border-cyan/30 bg-cyan-light px-2.5 py-1.5 text-xs font-medium text-cyan-dark">
+            <HomeIcon size={13} className="shrink-0" />
+            In-Clinic &middot; {availableText}
+          </span>
         </div>
 
-        {visibleSlots.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {visibleSlots.map((slot) => (
-              <span
-                key={slot}
-                className="rounded-md border border-line bg-bg px-2 py-1 font-tabular text-[11px] font-medium text-muted"
-              >
-                {slot}
-              </span>
-            ))}
-            {extraSlots > 0 && (
-              <span className="rounded-md border border-line bg-bg px-2 py-1 text-[11px] font-medium text-faint">
-                +{extraSlots} more
-              </span>
-            )}
-          </div>
-        )}
+        <p className="font-tabular text-xl font-bold text-ink">₹{doctor.consultationFee}</p>
 
-        {isLimited && (
-          <p className="flex items-center gap-1 text-xs font-semibold text-accent">
-            <Zap size={12} className="shrink-0 fill-accent" />
-            Only {slotCount} slot{slotCount !== 1 ? "s" : ""} left
-          </p>
-        )}
-
-        <div className="mt-1 flex items-center justify-between gap-3">
-          <div>
-            <p className="font-tabular text-base font-semibold text-ink">
-              ₹{doctor.consultationFee}
-            </p>
-            <p className="text-xs text-muted">Consultation fee</p>
-          </div>
-          <Link href={`/doctors/${doctor.slug}/book`} className="btn-primary btn-sm shrink-0">
-            Book <ArrowRight size={13} />
-          </Link>
-        </div>
+        <Link href={`/doctors/${doctor.slug}/book`} className="btn-primary w-full justify-center">
+          Book an Appointment
+        </Link>
+        <Link href={`/doctors/${doctor.slug}`} className="btn-secondary w-full justify-center">
+          View Profile
+        </Link>
       </div>
     </div>
   );

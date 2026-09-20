@@ -53,6 +53,8 @@ export interface Doctor {
   documents?: DoctorDocument[];
   /** ISO timestamp of when the doctor registered / was submitted for verification. */
   registeredAt?: string;
+  /** Optional editorial flag — shows a "Featured Doctor" badge on DoctorCard when true. */
+  featured?: boolean;
 }
 
 export interface Review {
