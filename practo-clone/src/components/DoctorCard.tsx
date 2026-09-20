@@ -26,15 +26,15 @@ export default function DoctorCard({ doctor }: { doctor: Doctor }) {
   return (
     <div className="card card-hover flex flex-col gap-4 p-5 sm:flex-row sm:items-stretch sm:gap-5">
       <Link href={`/doctors/${doctor.slug}${typeSuffix}`} className="relative shrink-0 self-center">
-        <div className="relative h-28 w-28 overflow-hidden rounded-xl border border-line sm:h-32 sm:w-32">
-          <Image
-            src={doctor.photo}
-            alt={doctor.name}
-            fill
-            sizes="128px"
-            className="object-cover"
-          />
-        </div>
+  <div className="relative h-36 w-36 shrink-0 overflow-hidden rounded-md border-2 border-white shadow-sm ring-1 ring-line sm:h-auto sm:min-h-[180px] sm:w-36">
+              <Image
+                src={doctor.photo}
+                alt={doctor.name}
+                fill
+                sizes="144px"
+                className="object-cover"
+              />
+            </div>
         <span className="absolute bottom-1.5 left-1.5 rounded-md bg-ink/75 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
           {doctor.experienceYears} years exp
         </span>

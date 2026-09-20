@@ -534,9 +534,15 @@ export default function DoctorProfilePage({
     <div className="mx-auto max-w-content px-5 py-8">
       {/* TOP — full-width doctor box */}
       <div className="card p-6">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-          <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-full border-2 border-white shadow-sm ring-1 ring-line sm:h-32 sm:w-32">
-            <Image src={doctor.photo} alt={doctor.name} fill sizes="128px" className="object-cover" />
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+          <div className="relative h-36 w-36 shrink-0 overflow-hidden rounded-md border-2 border-white shadow-sm ring-1 ring-line sm:h-auto sm:min-h-[180px] sm:w-36">
+            <Image
+              src={doctor.photo}
+              alt={doctor.name}
+              fill
+              sizes="144px"
+              className="object-cover"
+            />
           </div>
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-1.5">
