@@ -166,34 +166,54 @@ export default function VideoConsultPage() {
           </div>
 
           {/* Mock video-call card */}
-          <div className="hidden lg:block">
-            <div className="card ml-auto max-w-sm overflow-hidden p-0 shadow-soft">
-              <div className="relative flex aspect-[4/3] flex-col items-center justify-center bg-brand-gradient">
-                <span className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-black/30 px-2.5 py-1 text-xs font-medium text-white">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" /> Live
+            <div className="hidden lg:block">
+            <div className="card ml-auto max-w-xs overflow-hidden p-0">
+              {/* Desktop window chrome — makes the card read as a screen, not a photo */}
+              <div className="flex items-center gap-1.5 border-b border-line bg-bg px-3.5 py-2">
+                <span className="h-2 w-2 rounded-full bg-accent/70" />
+                <span className="h-2 w-2 rounded-full bg-amber-400/70" />
+                <span className="h-2 w-2 rounded-full bg-success/70" />
+                <span className="ml-2 truncate text-[10px] font-medium text-faint">Curo Video Consult</span>
+              </div>
+ 
+              <div className="relative flex aspect-[4/3] flex-col items-center justify-center bg-gradient-to-br from-primary-light via-surface to-cyan-light">
+                <span className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-surface px-2 py-0.5 text-[11px] font-medium text-ink shadow-sm">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
+                  Live
                 </span>
-                <img
-                  src={topConsultDoctors[0]?.photo}
-                  alt={topConsultDoctors[0]?.name}
-                  className="h-24 w-24 rounded-full border-4 border-white/80 object-cover shadow-lg"
-                />
-                <p className="mt-3 text-sm font-medium text-white">{topConsultDoctors[0]?.name}</p>
-                <p className="text-xs text-white/80">{topConsultDoctors[0]?.specialty}</p>
-                <div className="mt-4 flex items-end gap-1">
-                  {[8, 14, 6, 18, 10, 16, 7].map((h, i) => (
-                    <span key={i} className="w-1 rounded-full bg-white/70" style={{ height: `${h}px` }} />
+                <span className="rounded-full bg-brand-gradient p-[3px] shadow-md">
+                  <img
+                    src={topConsultDoctors[0]?.photo}
+                    alt={topConsultDoctors[0]?.name}
+                    className="h-16 w-16 rounded-full object-cover ring-[3px] ring-surface"
+                  />
+                </span>
+                <p className="mt-3 text-sm font-medium text-ink">{topConsultDoctors[0]?.name}</p>
+                <p className="text-xs text-muted">{topConsultDoctors[0]?.specialty}</p>
+                <div className="mt-3.5 flex items-end gap-1">
+                  {[
+                    { h: 5, tone: "bg-primary/60" },
+                    { h: 9, tone: "bg-cyan/60" },
+                    { h: 4, tone: "bg-accent/60" },
+                    { h: 11, tone: "bg-primary/60" },
+                    { h: 6, tone: "bg-cyan/60" },
+                    { h: 10, tone: "bg-accent/60" },
+                    { h: 5, tone: "bg-primary/60" },
+                  ].map((bar, i) => (
+                    <span key={i} className={`w-1 rounded-full ${bar.tone}`} style={{ height: `${bar.h}px` }} />
                   ))}
                 </div>
               </div>
-              <div className="flex items-center justify-center gap-3 p-4">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-bg text-muted">
-                  <Mic size={16} />
+ 
+              <div className="flex items-center justify-center gap-3 border-t border-line py-3">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full border border-line text-muted">
+                  <Mic size={13} />
                 </span>
-                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-white shadow-sm">
-                  <Phone size={17} className="rotate-[135deg]" />
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-white shadow-sm">
+                  <Phone size={14} className="rotate-[135deg]" />
                 </span>
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-bg text-muted">
-                  <Video size={16} />
+                <span className="flex h-8 w-8 items-center justify-center rounded-full border border-line text-muted">
+                  <Video size={13} />
                 </span>
               </div>
             </div>
