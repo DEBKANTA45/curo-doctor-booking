@@ -145,7 +145,7 @@ export default function VideoConsultPage() {
               Get a digital prescription and a free follow-up — from home.
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
-              <Link href="/doctors" className="btn-primary btn-lg">
+              <Link href="/doctors?type=video" className="btn-primary btn-lg">
                 Consult now <ArrowRight size={16} />
               </Link>
               <Link href="#specialities" className="btn-secondary btn-lg">
@@ -166,7 +166,7 @@ export default function VideoConsultPage() {
           </div>
 
           {/* Mock video-call card */}
-            <div className="hidden lg:block">
+          <div className="hidden lg:block">
             <div className="card ml-auto max-w-xs overflow-hidden p-0">
               {/* Desktop window chrome — makes the card read as a screen, not a photo */}
               <div className="flex items-center gap-1.5 border-b border-line bg-bg px-3.5 py-2">
@@ -175,7 +175,7 @@ export default function VideoConsultPage() {
                 <span className="h-2 w-2 rounded-full bg-success/70" />
                 <span className="ml-2 truncate text-[10px] font-medium text-faint">Curo Video Consult</span>
               </div>
- 
+
               <div className="relative flex aspect-[4/3] flex-col items-center justify-center bg-gradient-to-br from-primary-light via-surface to-cyan-light">
                 <span className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-surface px-2 py-0.5 text-[11px] font-medium text-ink shadow-sm">
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
@@ -204,7 +204,7 @@ export default function VideoConsultPage() {
                   ))}
                 </div>
               </div>
- 
+
               <div className="flex items-center justify-center gap-3 border-t border-line py-3">
                 <span className="flex h-8 w-8 items-center justify-center rounded-full border border-line text-muted">
                   <Mic size={13} />
@@ -237,7 +237,7 @@ export default function VideoConsultPage() {
             return (
               <Link
                 key={s.id}
-                href={`/doctors?specialty=${s.id}`}
+                href={`/doctors?specialty=${s.id}&type=video`}
                 className="card card-hover group flex flex-col gap-3 p-4"
               >
                 <span className="icon-tile-soft transition-colors duration-150 group-hover:bg-brand-gradient group-hover:text-white">
@@ -298,7 +298,7 @@ export default function VideoConsultPage() {
                       <p className="text-sm font-medium leading-snug text-ink">{c.question}</p>
                       <p className="mt-1 text-xs text-faint">₹{startingFeeFor(c.specialtyId)}</p>
                       <Link
-                        href={`/doctors?specialty=${c.specialtyId}`}
+                        href={`/doctors?specialty=${c.specialtyId}&type=video`}
                         className="btn-primary btn-sm mt-3 justify-center"
                       >
                         Consult Now
@@ -320,7 +320,7 @@ export default function VideoConsultPage() {
             <h2 className="mt-1.5 font-display text-2xl font-semibold text-ink sm:text-3xl">Our doctors</h2>
           </div>
           <Link
-            href="/doctors"
+            href="/doctors?type=video"
             className="flex items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-primary-dark"
           >
             View all <ArrowRight size={14} />
@@ -328,7 +328,7 @@ export default function VideoConsultPage() {
         </div>
         <div className="mt-6 grid grid-cols-2 gap-3.5 sm:grid-cols-4">
           {topConsultDoctors.map((d) => (
-            <Link key={d.id} href={`/doctors/${d.slug}`} className="card card-hover flex flex-col items-center p-4 text-center">
+            <Link key={d.id} href={`/doctors/${d.slug}?type=video`} className="card card-hover flex flex-col items-center p-4 text-center">
               <img src={d.photo} alt={d.name} className="h-16 w-16 rounded-full object-cover ring-2 ring-line" />
               <p className="mt-3 truncate text-sm font-medium text-ink">{d.name}</p>
               <p className="truncate text-xs text-muted">{d.specialty}</p>
@@ -423,7 +423,7 @@ export default function VideoConsultPage() {
             </p>
           </div>
           <Link
-            href="/doctors"
+            href="/doctors?type=video"
             className="relative flex shrink-0 items-center gap-1.5 rounded-md bg-white px-5 py-2.5 text-sm font-semibold text-primary-dark shadow-sm transition-transform duration-150 ease-out hover:-translate-y-0.5 active:scale-[0.97]"
           >
             Consult now <ArrowRight size={15} />

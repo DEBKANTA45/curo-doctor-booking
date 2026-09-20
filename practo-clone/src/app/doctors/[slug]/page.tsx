@@ -25,6 +25,7 @@ import { useAuth } from "@/context/AuthContext";
 import { createAppointment, getRatingSummary, getAllReviewsForDoctor, isSlotTaken } from "@/lib/mock-db";
 import { ConsultationType } from "@/lib/types";
 import RatingStars from "@/components/RatingStars";
+import { useSearchParams } from "next/navigation";
 
 const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const monthLabels = [
@@ -169,7 +170,10 @@ export default function DoctorProfilePage({
 
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
-  const [consultationType, setConsultationType] = useState<ConsultationType>("in-person");
+  const searchParams = useSearchParams();
+  const [consultationType, setConsultationType] = useState<ConsultationType>(
+    searchParams.get("type") === "video" ? "online" : "in-person"
+  );
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(currentMonth);
   const [reason, setReason] = useState("");
@@ -510,10 +514,10 @@ export default function DoctorProfilePage({
                   setSlotModalOpen(false);
                 }}
                 className={`rounded-md border px-3.5 py-2 text-sm font-tabular transition-colors ${taken
-                    ? "cursor-not-allowed border-line bg-bg text-faint line-through"
-                    : selectedTime === slot
-                      ? "border-primary bg-primary text-white"
-                      : "border-line text-ink hover:border-primary"
+                  ? "cursor-not-allowed border-line bg-bg text-faint line-through"
+                  : selectedTime === slot
+                    ? "border-primary bg-primary text-white"
+                    : "border-line text-ink hover:border-primary"
                   }`}
               >
                 {slot}
@@ -594,8 +598,8 @@ export default function DoctorProfilePage({
             type="button"
             onClick={() => setConsultationType("online")}
             className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-3 text-sm font-semibold transition-colors ${consultationType === "online"
-                ? "bg-primary text-white shadow-sm"
-                : "border border-line text-ink hover:border-primary"
+              ? "bg-primary text-white shadow-sm"
+              : "border border-line text-ink hover:border-primary"
               }`}
           >
             <Video size={16} /> Book a Video Appointment
@@ -604,8 +608,8 @@ export default function DoctorProfilePage({
             type="button"
             onClick={() => setConsultationType("in-person")}
             className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-3 text-sm font-semibold transition-colors ${consultationType === "in-person"
-                ? "bg-primary text-white shadow-sm"
-                : "border border-line text-ink hover:border-primary"
+              ? "bg-primary text-white shadow-sm"
+              : "border border-line text-ink hover:border-primary"
               }`}
           >
             <MapPin size={16} /> Book an In-Clinic Visit
@@ -711,8 +715,8 @@ export default function DoctorProfilePage({
                       key={date}
                       onClick={() => pickDate(date)}
                       className={`min-w-[96px] rounded-md border px-3 py-2 text-left transition-colors ${selectedDate === date
-                          ? "border-primary bg-primary text-white"
-                          : "border-line text-ink hover:border-primary"
+                        ? "border-primary bg-primary text-white"
+                        : "border-line text-ink hover:border-primary"
                         }`}
                     >
                       <span className="block text-sm font-medium">{info.label}</span>
@@ -726,8 +730,8 @@ export default function DoctorProfilePage({
                 <button
                   onClick={() => setShowCalendar((v) => !v)}
                   className={`flex min-w-[96px] items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${showCalendar || (selectedDate && !selectedIsQuickDay)
-                      ? "border-primary bg-primary text-white"
-                      : "border-line text-ink hover:border-primary"
+                    ? "border-primary bg-primary text-white"
+                    : "border-line text-ink hover:border-primary"
                     }`}
                 >
                   <CalendarDays size={15} />
@@ -767,10 +771,10 @@ export default function DoctorProfilePage({
                         disabled={d.disabled}
                         onClick={() => pickDate(d.date)}
                         className={`aspect-square rounded-md text-sm transition-colors ${d.disabled
-                            ? "cursor-not-allowed text-faint/60"
-                            : selectedDate === d.date
-                              ? "bg-primary text-white"
-                              : "text-ink hover:border hover:border-primary"
+                          ? "cursor-not-allowed text-faint/60"
+                          : selectedDate === d.date
+                            ? "bg-primary text-white"
+                            : "text-ink hover:border hover:border-primary"
                           }`}
                       >
                         {d.day}
@@ -788,8 +792,8 @@ export default function DoctorProfilePage({
                   onClick={() => selectedDate && setSlotModalOpen(true)}
                   disabled={!selectedDate}
                   className={`mt-2.5 flex w-full items-center justify-between rounded-md border px-4 py-3 text-sm transition-colors ${!selectedDate
-                      ? "cursor-not-allowed border-line bg-bg text-faint"
-                      : "border-line text-ink hover:border-primary"
+                    ? "cursor-not-allowed border-line bg-bg text-faint"
+                    : "border-line text-ink hover:border-primary"
                     }`}
                 >
                   <span className="flex items-center gap-2">

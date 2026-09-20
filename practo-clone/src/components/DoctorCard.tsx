@@ -1,5 +1,7 @@
+"use client";
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { MapPin, Video, Home as HomeIcon, CalendarClock, MessageCircle, Star } from "lucide-react";
 import { Doctor } from "@/lib/types";
 import RatingStars from "./RatingStars";
@@ -15,11 +17,15 @@ function nextAvailableText(doctor: Doctor) {
 }
 
 export default function DoctorCard({ doctor }: { doctor: Doctor }) {
+  const searchParams = useSearchParams();
+  const typeSuffix = searchParams.get("type") === "video" ? "?type=video" : "";
   const availableText = nextAvailableText(doctor);
+
+
 
   return (
     <div className="card card-hover flex flex-col gap-4 p-5 sm:flex-row sm:items-stretch sm:gap-5">
-      <Link href={`/doctors/${doctor.slug}`} className="relative shrink-0 self-center">
+      <Link href={`/doctors/${doctor.slug}${typeSuffix}`} className="relative shrink-0 self-center">
         <div className="relative h-28 w-28 overflow-hidden rounded-xl border border-line sm:h-32 sm:w-32">
           <Image
             src={doctor.photo}
@@ -45,7 +51,7 @@ export default function DoctorCard({ doctor }: { doctor: Doctor }) {
 
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
           <Link
-            href={`/doctors/${doctor.slug}`}
+            href={`/doctors/${doctor.slug}${typeSuffix}`}
             className="font-display text-base font-semibold text-ink transition-colors hover:text-primary"
           >
             {doctor.name}
@@ -99,10 +105,10 @@ export default function DoctorCard({ doctor }: { doctor: Doctor }) {
 
         <p className="font-tabular text-xl font-bold text-ink">₹{doctor.consultationFee}</p>
 
-        <Link href={`/doctors/${doctor.slug}/book`} className="btn-primary w-full justify-center">
+        <Link href={`/doctors/${doctor.slug}/book${typeSuffix}`} className="btn-primary w-full justify-center">
           Book an Appointment
         </Link>
-        <Link href={`/doctors/${doctor.slug}`} className="btn-secondary w-full justify-center">
+        <Link href={`/doctors/${doctor.slug}${typeSuffix}`} className="btn-secondary w-full justify-center">
           View Profile
         </Link>
       </div>
