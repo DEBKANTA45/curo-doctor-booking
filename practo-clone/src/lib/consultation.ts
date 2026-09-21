@@ -90,3 +90,17 @@ export function formatCountdown(appt: Appointment, now: Date = new Date()): stri
   if (minutes > 0) return `${minutes}m ${seconds}s`;
   return `${seconds}s`;
 }
+
+export type AdminAppointmentStatus = "confirmed" | "upcoming" | "completed" | "cancelled" | "rescheduled";
+
+// Collapses the raw status + live phase + reschedule history into the
+// 5-state vocabulary the Admin Portal displays (Confirmed / Upcoming /
+// Completed / Cancelled / Rescheduled). This is purely a display-layer
+// label — nothing here is persisted, and it never changes appt.status.
+export function getAdminAppointmentStatus(appt: Appointment, now: Date = new Date()): AdminAppointmentStatus {
+  if (appt.status === "cancelled") return "cancelled";
+  if (appt.status === "completed") return "completed";
+  if (appt.rescheduledFrom) return "rescheduled";
+  const phase = getAppointmentPhase(appt, now);
+  return phase === "upcoming" ? "confirmed" : "upcoming";
+}

@@ -20,6 +20,7 @@ const PATIENT_PROFILES_KEY = "curo_patient_profiles";
 const NOTIFICATIONS_KEY = "curo_notifications";
 const CUSTOM_REVIEWS_KEY = "curo_custom_reviews";
 const DOCTOR_OVERRIDES_KEY = "curo_doctor_overrides";
+const PATIENT_OVERRIDES_KEY = "curo_patient_overrides";
 
 function read<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -419,7 +420,7 @@ export function createAppointment(
 export function cancelAppointment(id: string, cancelledBy: "patient" | "doctor" = "patient") {
   const appt = getAppointmentById(id);
   const all = getAppointments().map((a) =>
-    a.id === id ? { ...a, status: "cancelled" as const } : a
+        a.id === id ? { ...a, status: "cancelled" as const, cancelledBy } : a
   );
   write(APPOINTMENTS_KEY, all);
 
@@ -453,7 +454,7 @@ export function rescheduleAppointment(id: string, newDate: string): Appointment 
   if (previous.date === newDate) return previous;
   if (isSlotTaken(previous.doctorId, newDate, previous.time)) return null;
 
-  const updated: Appointment = { ...previous, date: newDate };
+    const updated: Appointment = { ...previous, date: newDate, rescheduledFrom: previous.date };
   all[index] = updated;
   write(APPOINTMENTS_KEY, all);
 
@@ -624,4 +625,61 @@ export function resetPassword(
     tokens.filter((t) => !(t.email === target && t.code === code.trim()))
   );
   return { ok: true };
+}
+
+
+// ---------- Patient management (Admin Portal) ----------
+
+interface PatientOverride {
+  active?: boolean;
+}
+
+function getPatientOverrides(): Record<string, PatientOverride> {
+  return read<Record<string, PatientOverride>>(PATIENT_OVERRIDES_KEY, {});
+}
+
+function savePatientOverride(email: string, patch: PatientOverride) {
+  const key = email.trim().toLowerCase();
+  const all = getPatientOverrides();
+  all[key] = { ...all[key], ...patch };
+  write(PATIENT_OVERRIDES_KEY, all);
+}
+
+export interface AdminPatientView extends PatientAccount {
+  active: boolean;
+  appointmentCount: number;
+  lastVisitAt: string | null;
+}
+
+// All patient accounts, enriched with admin-facing status and a rollup of
+// their appointment activity. Use this (not getAccounts()) for any Admin
+// Portal patient screen.
+export function getAllPatientsForAdmin(): AdminPatientView[] {
+  const overrides = getPatientOverrides();
+  const patients = getAccounts().filter((a): a is PatientAccount => a.role === "patient");
+  const appts = getAppointments();
+
+  return patients.map((p) => {
+    const key = p.email.trim().toLowerCase();
+    const own = appts.filter((a) => a.patientEmail.trim().toLowerCase() === key);
+    const lastVisitAt = own.length
+      ? own.reduce((latest, a) => (a.date > latest ? a.date : latest), own[0].date)
+      : null;
+    return {
+      ...p,
+      active: overrides[key]?.active ?? true,
+      appointmentCount: own.length,
+      lastVisitAt,
+    };
+  });
+}
+
+export function getPatientForAdmin(email: string): AdminPatientView | undefined {
+  const target = email.trim().toLowerCase();
+  return getAllPatientsForAdmin().find((p) => p.email.trim().toLowerCase() === target);
+}
+
+export function setPatientActive(email: string, active: boolean): AdminPatientView | undefined {
+  savePatientOverride(email, { active });
+  return getPatientForAdmin(email);
 }

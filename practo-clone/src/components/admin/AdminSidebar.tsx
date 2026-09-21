@@ -22,8 +22,8 @@ export const adminNavItems = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard, ready: true },
   { label: "Doctors", href: "/admin/doctors", icon: Stethoscope, ready: true },
   { label: "Doctor Verification", href: "/admin/doctor-verification", icon: BadgeCheck, ready: true },
-  { label: "Patients", href: "/admin/patients", icon: Users, ready: false },
-  { label: "Appointments", href: "/admin/appointments", icon: CalendarDays, ready: false },
+  { label: "Patients", href: "/admin/patients", icon: Users, ready: true },
+  { label: "Appointments", href: "/admin/appointments", icon: CalendarDays, ready: true },
   { label: "Payments", href: "/admin/payments", icon: CreditCard, ready: false },
   { label: "Reviews", href: "/admin/reviews", icon: Star, ready: false },
   { label: "Notifications", href: "/admin/notifications", icon: Bell, ready: false },
@@ -53,7 +53,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       </div>
 
-      <nav className="no-scrollbar flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
+      <nav className="scrollbar-hide flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
         {adminNavItems.map((item) => {
           const active = pathname === item.href;
           return (

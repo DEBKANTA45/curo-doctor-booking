@@ -21,6 +21,7 @@ const DEFAULT_VARIANT_MAP: Record<string, StatusVariant> = {
   active: "success",
   approved: "success",
   resolved: "success",
+  confirmed: "success",
   cancelled: "accent",
   failed: "accent",
   rejected: "accent",
@@ -31,8 +32,10 @@ const DEFAULT_VARIANT_MAP: Record<string, StatusVariant> = {
   pending: "primary",
   "in review": "primary",
   scheduled: "primary",
+  "in-person": "primary",
   online: "cyan",
   unread: "cyan",
+  rescheduled: "cyan",
   draft: "faint",
   unverified: "faint",
 };

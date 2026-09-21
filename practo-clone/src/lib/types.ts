@@ -129,6 +129,11 @@ export interface Appointment {
   // Optional for the same reason as consultationType above — older
   // appointments predate the payment step and have no value here.
   paymentMethod?: PaymentMethod;
+  // Set by cancelAppointment() — who cancelled it, for admin visibility.
+  cancelledBy?: "patient" | "doctor";
+  // Set by rescheduleAppointment() to the previous date, whenever this
+  // appointment has been rescheduled at least once.
+  rescheduledFrom?: string;
 }
 
 export interface PatientProfile {
