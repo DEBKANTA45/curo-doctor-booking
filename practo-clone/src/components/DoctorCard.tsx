@@ -87,7 +87,7 @@ export default function DoctorCard({ doctor }: { doctor: Doctor }) {
 
       {/* RIGHT — availability + fee + CTAs */}
       <div className="flex shrink-0 flex-col gap-3 border-t border-line pt-4 sm:w-64 sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0">
-        <p className="flex items-center gap-1.5 text-sm font-semibold text-amber-600">
+        <p className="flex items-center gap-1.5 text-sm font-semibold text-blue-600">
           <CalendarClock size={15} />
           Next Available
         </p>
