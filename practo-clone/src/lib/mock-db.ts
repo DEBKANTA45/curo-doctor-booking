@@ -21,6 +21,8 @@ const NOTIFICATIONS_KEY = "curo_notifications";
 const CUSTOM_REVIEWS_KEY = "curo_custom_reviews";
 const DOCTOR_OVERRIDES_KEY = "curo_doctor_overrides";
 const PATIENT_OVERRIDES_KEY = "curo_patient_overrides";
+const REVIEW_OVERRIDES_KEY = "curo_review_overrides";
+const NOTIFICATION_BROADCASTS_KEY = "curo_notification_broadcasts";
 
 function read<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -548,8 +550,9 @@ export function addReview(review: Omit<Review, "id">): Review {
 }
 
 export function getAllReviewsForDoctor(doctorId: string): Review[] {
-  const seeded = seedReviews.filter((r) => r.doctorId === doctorId);
-  const custom = getCustomReviews(doctorId);
+  const hiddenIds = getHiddenReviewIds();
+  const seeded = seedReviews.filter((r) => r.doctorId === doctorId && !hiddenIds.has(r.id));
+  const custom = getCustomReviews(doctorId).filter((r) => !hiddenIds.has(r.id));
   return [...custom, ...seeded];
 }
 
@@ -557,7 +560,8 @@ export function getAllReviewsForDoctor(doctorId: string): Review[] {
 // submitted patient reviews, so new reviews move the average without
 // needing full historical review data for the seeded baseline.
 export function getRatingSummary(doctor: Doctor): { rating: number; reviewCount: number } {
-  const custom = getCustomReviews(doctor.id);
+  const hiddenIds = getHiddenReviewIds();
+  const custom = getCustomReviews(doctor.id).filter((r) => !hiddenIds.has(r.id));
   if (custom.length === 0) return { rating: doctor.rating, reviewCount: doctor.reviewCount };
 
   const baselineScore = doctor.rating * doctor.reviewCount;
@@ -682,4 +686,116 @@ export function getPatientForAdmin(email: string): AdminPatientView | undefined 
 export function setPatientActive(email: string, active: boolean): AdminPatientView | undefined {
   savePatientOverride(email, { active });
   return getPatientForAdmin(email);
+}
+
+
+// ---------- Reviews management (Admin Portal) ----------
+
+interface ReviewOverride {
+  hidden?: boolean;
+  reported?: boolean;
+}
+
+function getReviewOverrides(): Record<string, ReviewOverride> {
+  return read<Record<string, ReviewOverride>>(REVIEW_OVERRIDES_KEY, {});
+}
+
+function saveReviewOverride(id: string, patch: ReviewOverride) {
+  const all = getReviewOverrides();
+  all[id] = { ...all[id], ...patch };
+  write(REVIEW_OVERRIDES_KEY, all);
+}
+
+// Small deterministic hash so demo data can flag a stable subset of
+// reviews as "reported" without persisting anything up front — same
+// technique as the doctor verification demo defaults in this file.
+function hashReviewId(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+function getHiddenReviewIds(): Set<string> {
+  const overrides = getReviewOverrides();
+  return new Set(Object.entries(overrides).filter(([, o]) => o.hidden).map(([id]) => id));
+}
+
+export interface AdminReviewView extends Review {
+  doctorName: string;
+  reported: boolean;
+  hidden: boolean;
+}
+
+// All reviews (seeded + patient-submitted), enriched with the doctor's
+// name and admin-facing reported/hidden flags. Use this for any Admin
+// Portal reviews screen — never read the raw review lists directly.
+export function getAllReviewsForAdmin(): AdminReviewView[] {
+  const overrides = getReviewOverrides();
+  const doctors = getAllDoctors();
+  const combined = [...getCustomReviews(), ...seedReviews];
+
+  return combined.map((r) => {
+    const override = overrides[r.id];
+    const doctor = doctors.find((d) => d.id === r.doctorId);
+    return {
+      ...r,
+      doctorName: doctor?.name ?? "Unknown doctor",
+      reported: override?.hidden || (override?.reported ?? hashReviewId(r.id) % 7 === 0),
+      hidden: override?.hidden ?? false,
+    };
+  });
+}
+
+export function hideReview(id: string): void {
+  saveReviewOverride(id, { hidden: true, reported: true });
+}
+
+export function unhideReview(id: string): void {
+  saveReviewOverride(id, { hidden: false });
+}
+
+// ---------- Notifications management (Admin Portal) ----------
+
+export function getAllNotifications(): Notification[] {
+  return read<Notification[]>(NOTIFICATIONS_KEY, []).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+export type NotificationAudience = "all-patients" | "all-doctors" | "selected";
+
+export interface AdminNotificationBroadcast {
+  id: string;
+  message: string;
+  audience: NotificationAudience;
+  recipientCount: number;
+  createdAt: string;
+}
+
+export function getBroadcastHistory(): AdminNotificationBroadcast[] {
+  return read<AdminNotificationBroadcast[]>(NOTIFICATION_BROADCASTS_KEY, []).sort((a, b) =>
+    b.createdAt.localeCompare(a.createdAt)
+  );
+}
+
+// Sends `message` to every email in `recipientEmails` (one Notification
+// row each, via the existing addNotification()) and records a single
+// broadcast-history entry so the Admin Portal can show "sent to N people"
+// without needing to list every individual notification row.
+export function sendAdminNotification(
+  message: string,
+  audience: NotificationAudience,
+  recipientEmails: string[]
+): AdminNotificationBroadcast {
+  recipientEmails.forEach((email) => addNotification(email, message));
+
+  const broadcast: AdminNotificationBroadcast = {
+    id: `bcast_${Date.now()}`,
+    message,
+    audience,
+    recipientCount: recipientEmails.length,
+    createdAt: new Date().toISOString(),
+  };
+  const all = read<AdminNotificationBroadcast[]>(NOTIFICATION_BROADCASTS_KEY, []);
+  all.unshift(broadcast);
+  write(NOTIFICATION_BROADCASTS_KEY, all);
+  return broadcast;
 }

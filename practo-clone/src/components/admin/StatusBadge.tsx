@@ -28,6 +28,7 @@ const DEFAULT_VARIANT_MAP: Record<string, StatusVariant> = {
   inactive: "accent",
   suspended: "accent",
   refunded: "accent",
+  reported: "accent",
   upcoming: "primary",
   pending: "primary",
   "in review": "primary",
@@ -36,6 +37,7 @@ const DEFAULT_VARIANT_MAP: Record<string, StatusVariant> = {
   online: "cyan",
   unread: "cyan",
   rescheduled: "cyan",
+  hidden: "cyan",
   draft: "faint",
   unverified: "faint",
 };
