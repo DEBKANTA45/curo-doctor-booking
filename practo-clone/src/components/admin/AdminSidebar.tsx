@@ -86,7 +86,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       </nav>
 
       <div className="shrink-0 border-t border-line px-5 py-3">
-        <p className="text-[11px] text-faint">Curo &middot; Demo build</p>
+        <p className="text-[11px] text-faint">Curo &middot; Admin</p>
       </div>
     </>
   );
