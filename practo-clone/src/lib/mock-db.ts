@@ -68,13 +68,14 @@ export function registerPatient(data: {
   if (findAccountByEmail(email)) {
     return { ok: false, error: "An account with this email already exists." };
   }
-  const account: PatientAccount = {
+    const account: PatientAccount = {
     id: `p_${Date.now()}`,
     role: "patient",
     name: data.name.trim(),
     email,
     password: data.password,
     phone: data.phone.trim(),
+    createdAt: new Date().toISOString(),
   };
   const accounts = getAccounts();
   accounts.push(account);

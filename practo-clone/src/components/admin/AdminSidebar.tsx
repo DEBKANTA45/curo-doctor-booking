@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
+  BarChart3,  
   Stethoscope,
   BadgeCheck,
   Users,
@@ -20,6 +21,7 @@ import {
 
 export const adminNavItems = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard, ready: true },
+  { label: "Analytics Dashboard", href: "/admin/analytics", icon: BarChart3, ready: true }, // ← add this
   { label: "Doctors", href: "/admin/doctors", icon: Stethoscope, ready: true },
   { label: "Doctor Verification", href: "/admin/doctor-verification", icon: BadgeCheck, ready: true },
   { label: "Patients", href: "/admin/patients", icon: Users, ready: true },
@@ -27,7 +29,7 @@ export const adminNavItems = [
   { label: "Payments", href: "/admin/payments", icon: CreditCard, ready: true },
   { label: "Reviews", href: "/admin/reviews", icon: Star, ready: true },
   { label: "Notifications", href: "/admin/notifications", icon: Bell, ready: true },
-  { label: "Reports", href: "/admin/reports", icon: FileBarChart, ready: false },
+  { label: "Reports", href: "/admin/reports", icon: FileBarChart, ready: true }, // ← flip to true
   { label: "Admin Users", href: "/admin/admin-users", icon: ShieldCheck, ready: false },
   { label: "Audit Logs", href: "/admin/audit-logs", icon: History, ready: false },
   { label: "Settings", href: "/admin/settings", icon: Settings, ready: false },

@@ -76,6 +76,10 @@ export interface PatientAccount {
   email: string;
   password: string;
   phone: string;
+  // When this account was created — used for the Admin Portal's patient
+  // registration trend chart. Optional since accounts created before this
+  // field existed have no value here.
+  createdAt?: string;
 }
 
 export interface DoctorAccount {
