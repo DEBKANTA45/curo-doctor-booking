@@ -11,6 +11,7 @@ import {
   VerificationStatus,
 } from "./types";
 import { doctors as seedDoctors, reviews as seedReviews } from "./utils";
+import { getAdminName, getAdminEmail } from "./admin-auth";
 
 const ACCOUNTS_KEY = "curo_accounts";
 const SESSION_KEY = "curo_session";
@@ -23,6 +24,7 @@ const DOCTOR_OVERRIDES_KEY = "curo_doctor_overrides";
 const PATIENT_OVERRIDES_KEY = "curo_patient_overrides";
 const REVIEW_OVERRIDES_KEY = "curo_review_overrides";
 const NOTIFICATION_BROADCASTS_KEY = "curo_notification_broadcasts";
+const AUDIT_LOGS_KEY = "curo_audit_logs";
 
 function read<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -285,18 +287,24 @@ export function updateCustomDoctor(id: string, updates: Partial<Doctor>): Doctor
 
 export function setDoctorActive(id: string, active: boolean): Doctor | undefined {
   saveDoctorOverride(id, { active });
-  return getDoctorById(id);
+  const doctor = getDoctorById(id);
+  if (doctor) logAdminAction(active ? "Activated doctor" : "Deactivated doctor", "doctor", doctor.name);
+  return doctor;
 }
 
 export function approveDoctorVerification(id: string): Doctor | undefined {
   saveDoctorOverride(id, { verificationStatus: "approved", rejectionReason: undefined });
-  return getDoctorById(id);
+  const doctor = getDoctorById(id);
+  if (doctor) logAdminAction("Approved doctor verification", "doctor", doctor.name);
+  return doctor;
 }
 
 export function rejectDoctorVerification(id: string, reason: string): Doctor | undefined {
   const trimmed = reason.trim();
   saveDoctorOverride(id, { verificationStatus: "rejected", rejectionReason: trimmed });
-  return getDoctorById(id);
+  const doctor = getDoctorById(id);
+  if (doctor) logAdminAction("Rejected doctor verification", "doctor", doctor.name);
+  return doctor;
 }
 
 // Lets a rejected doctor resubmit for review — moves them back to
@@ -685,7 +693,9 @@ export function getPatientForAdmin(email: string): AdminPatientView | undefined 
 
 export function setPatientActive(email: string, active: boolean): AdminPatientView | undefined {
   savePatientOverride(email, { active });
-  return getPatientForAdmin(email);
+  const patient = getPatientForAdmin(email);
+  if (patient) logAdminAction(active ? "Activated patient" : "Deactivated patient", "patient", patient.name);
+  return patient;
 }
 
 
@@ -748,10 +758,14 @@ export function getAllReviewsForAdmin(): AdminReviewView[] {
 
 export function hideReview(id: string): void {
   saveReviewOverride(id, { hidden: true, reported: true });
+  const review = getAllReviewsForAdmin().find((r) => r.id === id);
+  logAdminAction("Hid review", "review", review ? `${review.author} → ${review.doctorName}` : id);
 }
 
 export function unhideReview(id: string): void {
   saveReviewOverride(id, { hidden: false });
+  const review = getAllReviewsForAdmin().find((r) => r.id === id);
+  logAdminAction("Unhid review", "review", review ? `${review.author} → ${review.doctorName}` : id);
 }
 
 // ---------- Notifications management (Admin Portal) ----------
@@ -794,8 +808,49 @@ export function sendAdminNotification(
     recipientCount: recipientEmails.length,
     createdAt: new Date().toISOString(),
   };
-  const all = read<AdminNotificationBroadcast[]>(NOTIFICATION_BROADCASTS_KEY, []);
+    const all = read<AdminNotificationBroadcast[]>(NOTIFICATION_BROADCASTS_KEY, []);
   all.unshift(broadcast);
   write(NOTIFICATION_BROADCASTS_KEY, all);
+
+  const audienceText =
+    audience === "all-patients" ? "All Patients" : audience === "all-doctors" ? "All Doctors" : `${recipientEmails.length} selected users`;
+  logAdminAction(`Sent notification to ${audienceText}`, "notification", message.slice(0, 60));
+
   return broadcast;
+}
+
+// ---------- Audit logs (Admin Portal) ----------
+
+export type AuditEntityType = "doctor" | "patient" | "review" | "notification";
+
+export interface AuditLogEntry {
+  id: string;
+  actorName: string;
+  actorEmail: string;
+  action: string;
+  entityType: AuditEntityType;
+  entityLabel: string;
+  createdAt: string;
+}
+
+// Records one admin action. Called internally by the admin mutation
+// functions above (setDoctorActive, approveDoctorVerification, etc.) —
+// never call this directly from a page component.
+function logAdminAction(action: string, entityType: AuditEntityType, entityLabel: string) {
+  const entry: AuditLogEntry = {
+    id: `log_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    actorName: getAdminName(),
+    actorEmail: getAdminEmail(),
+    action,
+    entityType,
+    entityLabel,
+    createdAt: new Date().toISOString(),
+  };
+  const all = read<AuditLogEntry[]>(AUDIT_LOGS_KEY, []);
+  all.unshift(entry);
+  write(AUDIT_LOGS_KEY, all);
+}
+
+export function getAuditLogs(): AuditLogEntry[] {
+  return read<AuditLogEntry[]>(AUDIT_LOGS_KEY, []).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }

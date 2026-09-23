@@ -34,3 +34,7 @@ export function isAdminLoggedIn(): boolean {
 export function getAdminName(): string {
   return MOCK_ADMIN_NAME;
 }
+
+export function getAdminEmail(): string {
+  return MOCK_ADMIN_EMAIL;
+}

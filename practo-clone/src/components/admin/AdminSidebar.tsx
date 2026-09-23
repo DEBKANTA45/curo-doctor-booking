@@ -29,7 +29,7 @@ export const adminNavItems = [
   { label: "Notifications", href: "/admin/notifications", icon: Bell, ready: true },
   { label: "Reports", href: "/admin/reports", icon: FileBarChart, ready: false },
   { label: "Admin Users", href: "/admin/admin-users", icon: ShieldCheck, ready: false },
-  { label: "Audit Logs", href: "/admin/audit-logs", icon: History, ready: false },
+  { label: "Audit Logs", href: "/admin/audit-logs", icon: History, ready: true },
   { label: "Settings", href: "/admin/settings", icon: Settings, ready: false },
 ];
 
@@ -86,7 +86,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       </nav>
 
       <div className="shrink-0 border-t border-line px-5 py-3">
-        <p className="text-[11px] text-faint">Curo &middot; Admin</p>
+        <p className="text-[11px] text-faint">Curo &middot; Demo build</p>
       </div>
     </>
   );
