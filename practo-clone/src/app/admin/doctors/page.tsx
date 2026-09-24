@@ -24,7 +24,10 @@ import ConfirmActionModal from "@/components/admin/ConfirmActionModal";
 import LoadingState from "@/components/admin/LoadingState";
 import EmptyState from "@/components/admin/EmptyState";
 import ErrorState from "@/components/admin/ErrorState";
+// import { useAdminAuth } from "@/context/AdminAuthContext";
 
+// const { can } = useAdminAuth();
+// const canEdit = can("doctors", "edit");
 const PAGE_SIZE = 8;
 
 type SortKey = "name" | "experienceYears" | "consultationFee";

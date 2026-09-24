@@ -6,6 +6,13 @@ import { ShieldCheck, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useAdminAuth } from "@/context/AdminAuthContext";
 import toast from "react-hot-toast";
 
+// One seeded account per role, so every permission level can be tried out.
+const DEMO_ACCOUNTS = [
+  { role: "Super Admin", email: "admin@curo.com", password: "admin@7898" },
+  { role: "Admin", email: "manager@curo.com", password: "manager@123" },
+  { role: "Support", email: "support@curo.com", password: "support@123" },
+];
+
 export default function AdminLoginPage() {
   const router = useRouter();
   const { login } = useAdminAuth();
@@ -13,7 +20,6 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
-  const [showEcg, setShowEcg] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,9 +99,26 @@ export default function AdminLoginPage() {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-xs text-faint">
-          Demo credentials: admin@curo.com / admin@7898
-        </p>
+        <div className="mt-6 border-t border-line pt-4">
+          <p className="text-xs font-medium text-muted">Demo accounts — click to fill</p>
+          <div className="mt-2 flex flex-col gap-1.5">
+            {DEMO_ACCOUNTS.map((a) => (
+              <button
+                key={a.email}
+                type="button"
+                onClick={() => {
+                  setEmail(a.email);
+                  setPassword(a.password);
+                  setError("");
+                }}
+                className="flex items-center justify-between rounded-md border border-line px-3 py-2 text-left text-xs transition-colors hover:border-primary/40 hover:bg-primary-light"
+              >
+                <span className="font-medium text-ink">{a.role}</span>
+                <span className="text-faint">{a.email}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

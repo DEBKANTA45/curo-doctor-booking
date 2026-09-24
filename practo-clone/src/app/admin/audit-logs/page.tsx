@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Stethoscope, UserRound, Star, Bell, Clock } from "lucide-react";
+import { Stethoscope, UserRound, Star, Bell, Clock, ShieldCheck, KeyRound, Settings } from "lucide-react";
 import { getAuditLogs, AuditLogEntry, AuditEntityType } from "@/lib/mock-db";
 import AdminTable, { AdminTableColumn } from "@/components/admin/AdminTable";
 // import SearchFilter from "@/components/admin/SearchFilter";
@@ -17,6 +17,9 @@ const ENTITY_FILTER_OPTIONS = [
   { label: "Patients", value: "patient" },
   { label: "Reviews", value: "review" },
   { label: "Notifications", value: "notification" },
+   { label: "Admin users", value: "admin" },
+  { label: "Roles", value: "role" },
+  { label: "Settings", value: "settings" },
 ];
 
 const ENTITY_ICON: Record<AuditEntityType, typeof Stethoscope> = {
@@ -24,6 +27,9 @@ const ENTITY_ICON: Record<AuditEntityType, typeof Stethoscope> = {
   patient: UserRound,
   review: Star,
   notification: Bell,
+  admin: ShieldCheck,
+  role: KeyRound,
+  settings: Settings,
 };
 
 function formatDateTime(iso: string) {

@@ -822,7 +822,8 @@ export function sendAdminNotification(
 
 // ---------- Audit logs (Admin Portal) ----------
 
-export type AuditEntityType = "doctor" | "patient" | "review" | "notification";
+export type AuditEntityType = "doctor" | "patient" | "review" | "notification" | "admin" | "role" | "settings";
+
 
 export interface AuditLogEntry {
   id: string;
@@ -837,7 +838,7 @@ export interface AuditLogEntry {
 // Records one admin action. Called internally by the admin mutation
 // functions above (setDoctorActive, approveDoctorVerification, etc.) —
 // never call this directly from a page component.
-function logAdminAction(action: string, entityType: AuditEntityType, entityLabel: string) {
+export function logAdminAction(action: string, entityType: AuditEntityType, entityLabel: string) {
   const entry: AuditLogEntry = {
     id: `log_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     actorName: getAdminName(),

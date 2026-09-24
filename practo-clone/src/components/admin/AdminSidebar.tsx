@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
-  BarChart3,  
+  BarChart3,
   Stethoscope,
   BadgeCheck,
   Users,
@@ -14,25 +14,37 @@ import {
   Bell,
   FileBarChart,
   ShieldCheck,
+  KeyRound,
   History,
   Settings,
   X,
 } from "lucide-react";
+import { useAdminAuth } from "@/context/AdminAuthContext";
+import { ALWAYS_ACCESSIBLE_MODULES, AdminModule } from "@/lib/admin-permissions";
 
-export const adminNavItems = [
-  { label: "Dashboard", href: "/admin", icon: LayoutDashboard, ready: true },
-  { label: "Analytics Dashboard", href: "/admin/analytics", icon: BarChart3, ready: true }, // ← add this
-  { label: "Doctors", href: "/admin/doctors", icon: Stethoscope, ready: true },
-  { label: "Doctor Verification", href: "/admin/doctor-verification", icon: BadgeCheck, ready: true },
-  { label: "Patients", href: "/admin/patients", icon: Users, ready: true },
-  { label: "Appointments", href: "/admin/appointments", icon: CalendarDays, ready: true },
-  { label: "Payments", href: "/admin/payments", icon: CreditCard, ready: true },
-  { label: "Reviews", href: "/admin/reviews", icon: Star, ready: true },
-  { label: "Notifications", href: "/admin/notifications", icon: Bell, ready: true },
-  { label: "Reports", href: "/admin/reports", icon: FileBarChart, ready: true }, // ← flip to true
-  { label: "Admin Users", href: "/admin/admin-users", icon: ShieldCheck, ready: false },
-  { label: "Audit Logs", href: "/admin/audit-logs", icon: History, ready: true },
-  { label: "Settings", href: "/admin/settings", icon: Settings, ready: false },
+// `module` ties each item to the permission model — an item is only shown
+// when the signed-in admin can view that module.
+export const adminNavItems: {
+  label: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+  ready: boolean;
+  module: AdminModule;
+}[] = [
+  { label: "Dashboard", href: "/admin", icon: LayoutDashboard, ready: true, module: "dashboard" },
+  { label: "Analytics Dashboard", href: "/admin/analytics", icon: BarChart3, ready: true, module: "analytics" },
+  { label: "Doctors", href: "/admin/doctors", icon: Stethoscope, ready: true, module: "doctors" },
+  { label: "Doctor Verification", href: "/admin/doctor-verification", icon: BadgeCheck, ready: true, module: "doctor-verification" },
+  { label: "Patients", href: "/admin/patients", icon: Users, ready: true, module: "patients" },
+  { label: "Appointments", href: "/admin/appointments", icon: CalendarDays, ready: true, module: "appointments" },
+  { label: "Payments", href: "/admin/payments", icon: CreditCard, ready: true, module: "payments" },
+  { label: "Reviews", href: "/admin/reviews", icon: Star, ready: true, module: "reviews" },
+  { label: "Notifications", href: "/admin/notifications", icon: Bell, ready: true, module: "notifications" },
+  { label: "Reports", href: "/admin/reports", icon: FileBarChart, ready: true, module: "reports" },
+  { label: "Admin Users", href: "/admin/admin-users", icon: ShieldCheck, ready: true, module: "admin-users" },
+  { label: "Roles & Permissions", href: "/admin/roles", icon: KeyRound, ready: true, module: "roles" },
+  { label: "Audit Logs", href: "/admin/audit-logs", icon: History, ready: true, module: "audit-logs" },
+  { label: "Settings", href: "/admin/settings", icon: Settings, ready: true, module: "settings" },
 ];
 
 interface AdminSidebarProps {
@@ -42,6 +54,11 @@ interface AdminSidebarProps {
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const { can, role } = useAdminAuth();
+
+  const visibleItems = adminNavItems.filter(
+    (item) => ALWAYS_ACCESSIBLE_MODULES.includes(item.module) || can(item.module, "view")
+  );
 
   return (
     <>
@@ -56,7 +73,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       <nav className="scrollbar-hide flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
-        {adminNavItems.map((item) => {
+        {visibleItems.map((item) => {
           const active = pathname === item.href;
           return (
             <Link
@@ -88,7 +105,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       </nav>
 
       <div className="shrink-0 border-t border-line px-5 py-3">
-        <p className="text-[11px] text-faint">Curo &middot; Demo build</p>
+        <p className="text-[11px] text-faint">Curo &middot; {role ? `Signed in as ${role.name}` : "Demo build"}</p>
       </div>
     </>
   );
@@ -105,11 +122,7 @@ export default function AdminSidebar({ mobileOpen, onCloseMobile }: AdminSidebar
       {/* Mobile — slide-in drawer with backdrop */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="absolute inset-0 bg-ink/40"
-            onClick={onCloseMobile}
-            aria-hidden="true"
-          />
+          <div className="absolute inset-0 bg-ink/40" onClick={onCloseMobile} aria-hidden="true" />
           <aside className="relative flex h-full w-72 max-w-[80vw] flex-col bg-surface shadow-soft">
             <button
               onClick={onCloseMobile}

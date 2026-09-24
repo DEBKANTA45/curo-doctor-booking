@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import AdminSidebar from "./AdminSidebar";
 import AdminHeader from "./AdminHeader";
+import RouteGuard from "./RouteGuard";
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -14,13 +15,15 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     return <>{children}</>;
   }
 
- return (
-  <div className="flex h-screen overflow-hidden bg-bg">
-    <AdminSidebar mobileOpen={mobileSidebarOpen} onCloseMobile={() => setMobileSidebarOpen(false)} />
-    <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-      <AdminHeader onOpenMobileSidebar={() => setMobileSidebarOpen(true)} />
-      <main className="flex-1 overflow-y-auto">{children}</main>
+  return (
+    <div className="flex h-screen overflow-hidden bg-bg">
+      <AdminSidebar mobileOpen={mobileSidebarOpen} onCloseMobile={() => setMobileSidebarOpen(false)} />
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <AdminHeader onOpenMobileSidebar={() => setMobileSidebarOpen(true)} />
+        <main className="flex-1 overflow-y-auto">
+          <RouteGuard>{children}</RouteGuard>
+        </main>
+      </div>
     </div>
-  </div>
-);
+  );
 }
