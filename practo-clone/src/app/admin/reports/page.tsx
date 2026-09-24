@@ -179,8 +179,12 @@ export default function AdminReportsPage() {
 
   const summary = useMemo(() => {
     if (category === "appointments") {
-      const completed = filteredReportRows.filter((a) => a.status === "completed").length;
-      const cancelled = filteredReportRows.filter((a) => a.status === "cancelled").length;
+    const completed = filteredReportRows.filter(
+  (a) => getAdminAppointmentStatus(a, now) === "completed"
+).length;
+     const cancelled = filteredReportRows.filter(
+  (a) => getAdminAppointmentStatus(a, now) === "cancelled"
+).length;
       const online = filteredReportRows.filter((a) => getConsultationType(a) === "online").length;
       return [
         { label: "Total appointments", value: filteredReportRows.length },
@@ -198,7 +202,7 @@ export default function AdminReportsPage() {
       { label: "Paid transactions", value: paid.length },
       { label: "Amount collected", value: formatINR(paidAmount) },
     ];
-  }, [filteredReportRows, category]);
+ }, [filteredReportRows, category, now]);
 
   const appointmentColumns: AdminTableColumn<Appointment>[] = [
     { key: "patientName", header: "Patient", render: (a) => <span className="text-sm text-ink">{a.patientName}</span> },

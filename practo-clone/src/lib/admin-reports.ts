@@ -70,7 +70,7 @@ export function appointmentTrend(appointments: Appointment[], buckets = lastNMon
 export function revenueTrend(appointments: Appointment[], buckets = lastNMonthBuckets()) {
   const sums = new Map(buckets.map((b) => [b.key, 0]));
   appointments
-    .filter((a) => a.status === "completed")
+    .filter((a) => getPaymentStatus(a) === "paid")
     .forEach((a) => {
       const key = monthKeyOf(a.consultedAt ?? a.date);
       if (sums.has(key)) sums.set(key, (sums.get(key) ?? 0) + a.fee);

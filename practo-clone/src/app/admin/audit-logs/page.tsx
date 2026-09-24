@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Stethoscope, UserRound, Star, Bell, Clock } from "lucide-react";
 import { getAuditLogs, AuditLogEntry, AuditEntityType } from "@/lib/mock-db";
 import AdminTable, { AdminTableColumn } from "@/components/admin/AdminTable";
-import SearchFilter from "@/components/admin/SearchFilter";
+// import SearchFilter from "@/components/admin/SearchFilter";
 import Pagination from "@/components/admin/Pagination";
 import LoadingState from "@/components/admin/LoadingState";
 import EmptyState from "@/components/admin/EmptyState";
@@ -42,10 +42,12 @@ export default function AdminAuditLogsPage() {
   const [logs, setLogs] = useState<AuditLogEntry[] | null>(null);
   const [error, setError] = useState(false);
 
-  const [search, setSearch] = useState("");
-  const [entityFilter, setEntityFilter] = useState("");
-  const [dateFilter, setDateFilter] = useState("");
-  const [page, setPage] = useState(1);
+const [search, setSearch] = useState("");
+const [entityFilter, setEntityFilter] = useState("");
+const [actionFilter, setActionFilter] = useState("");
+const [userFilter, setUserFilter] = useState("");
+const [dateFilter, setDateFilter] = useState("");
+const [page, setPage] = useState(1);
 
   function load() {
     setLogs(null);
@@ -64,23 +66,75 @@ export default function AdminAuditLogsPage() {
   }, []);
 
   useEffect(() => {
-    setPage(1);
-  }, [search, entityFilter, dateFilter]);
+  setPage(1);
+}, [search, entityFilter, actionFilter, userFilter, dateFilter]);
+
+  const userFilterOptions = useMemo(() => {
+  if (!logs) return [];
+
+  const users = new Map<string, string>();
+
+  logs.forEach((log) => {
+    users.set(log.actorEmail, log.actorName);
+  });
+
+  return Array.from(users.entries())
+    .sort((a, b) => a[1].localeCompare(b[1]))
+    .map(([email, name]) => ({
+      label: `${name} (${email})`,
+      value: email,
+    }));
+}, [logs]);
+
+const actionFilterOptions = useMemo(() => {
+  if (!logs) return [];
+
+  return Array.from(new Set(logs.map((log) => log.action))).sort(
+    (a, b) => a.localeCompare(b)
+  );
+}, [logs]);
 
   const filtered = useMemo(() => {
-    if (!logs) return [];
-    const term = search.trim().toLowerCase();
-    return logs.filter((l) => {
-      const matchesSearch =
-        !term ||
-        l.action.toLowerCase().includes(term) ||
-        l.entityLabel.toLowerCase().includes(term) ||
-        l.actorName.toLowerCase().includes(term);
-      const matchesEntity = !entityFilter || l.entityType === entityFilter;
-      const matchesDate = !dateFilter || l.createdAt.slice(0, 10) === dateFilter;
-      return matchesSearch && matchesEntity && matchesDate;
-    });
-  }, [logs, search, entityFilter, dateFilter]);
+  if (!logs) return [];
+
+  const term = search.trim().toLowerCase();
+
+  return logs.filter((l) => {
+    const matchesSearch =
+      !term ||
+      l.action.toLowerCase().includes(term) ||
+      l.entityLabel.toLowerCase().includes(term) ||
+      l.actorName.toLowerCase().includes(term) ||
+      l.actorEmail.toLowerCase().includes(term);
+
+    const matchesEntity =
+      !entityFilter || l.entityType === entityFilter;
+
+    const matchesAction =
+      !actionFilter || l.action === actionFilter;
+
+    const matchesUser =
+      !userFilter || l.actorEmail === userFilter;
+
+    const matchesDate =
+      !dateFilter || l.createdAt.slice(0, 10) === dateFilter;
+
+    return (
+      matchesSearch &&
+      matchesEntity &&
+      matchesAction &&
+      matchesUser &&
+      matchesDate
+    );
+  });
+}, [
+  logs,
+  search,
+  entityFilter,
+  actionFilter,
+  userFilter,
+  dateFilter,
+]);
 
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
@@ -131,47 +185,138 @@ export default function AdminAuditLogsPage() {
   ];
 
   return (
-    <div className="p-5 sm:p-8">
-      <h1 className="font-display text-2xl font-semibold text-ink">Audit Logs</h1>
-      <p className="mt-1 text-sm text-muted">Every important action taken in the Admin Portal, in order.</p>
+  <div className="p-5 sm:p-8">
+    <h1 className="font-display text-2xl font-semibold text-ink">
+      Audit Logs
+    </h1>
 
-      <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center">
-        <div className="flex-1">
-          <SearchFilter
-            searchValue={search}
-            onSearchChange={setSearch}
-            searchPlaceholder="Search by action, entity or admin name…"
-            filterValue={entityFilter}
-            onFilterChange={setEntityFilter}
-            filterOptions={ENTITY_FILTER_OPTIONS}
-            filterAllLabel="All entities"
-          />
-        </div>
+    <p className="mt-1 text-sm text-muted">
+      Every important action taken in the Admin Portal, in order.
+    </p>
+
+    <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+      {/* Search */}
+      <div className="sm:col-span-2 lg:col-span-2">
+        <label className="mb-1 block text-xs font-medium text-muted">
+          Search
+        </label>
+
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search action, entity, admin or email…"
+          className="field w-full"
+        />
+      </div>
+
+      {/* User */}
+      <div>
+        <label className="mb-1 block text-xs font-medium text-muted">
+          User
+        </label>
+
+        <select
+          value={userFilter}
+          onChange={(e) => setUserFilter(e.target.value)}
+          className="field w-full"
+        >
+          <option value="">All users</option>
+
+          {userFilterOptions.map((user) => (
+            <option key={user.value} value={user.value}>
+              {user.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Action */}
+      <div>
+        <label className="mb-1 block text-xs font-medium text-muted">
+          Action
+        </label>
+
+        <select
+          value={actionFilter}
+          onChange={(e) => setActionFilter(e.target.value)}
+          className="field w-full"
+        >
+          <option value="">All actions</option>
+
+          {actionFilterOptions.map((action) => (
+            <option key={action} value={action}>
+              {action}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Date */}
+      <div>
+        <label className="mb-1 block text-xs font-medium text-muted">
+          Date
+        </label>
+
         <input
           type="date"
           value={dateFilter}
           onChange={(e) => setDateFilter(e.target.value)}
-          className="field lg:w-44"
+          className="field w-full"
         />
       </div>
 
-      <div className="mt-5">
-        {error ? (
-          <ErrorState description="Couldn't load audit logs." onRetry={load} />
-        ) : logs === null ? (
-          <LoadingState label="Loading audit logs…" />
-        ) : filtered.length === 0 ? (
-          <EmptyState
-            title="No activity yet"
-            description="Admin actions like approving doctors or deactivating accounts will show up here."
-          />
-        ) : (
-          <>
-            <AdminTable columns={columns} rows={paged} rowKey={(l) => l.id} />
-            <Pagination page={page} pageSize={PAGE_SIZE} total={filtered.length} onPageChange={setPage} />
-          </>
-        )}
+      {/* Entity */}
+      <div>
+        <label className="mb-1 block text-xs font-medium text-muted">
+          Entity
+        </label>
+
+        <select
+          value={entityFilter}
+          onChange={(e) => setEntityFilter(e.target.value)}
+          className="field w-full"
+        >
+          <option value="">All entities</option>
+
+          {ENTITY_FILTER_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
       </div>
     </div>
-  );
+
+    <div className="mt-5">
+      {error ? (
+        <ErrorState
+          description="Couldn't load audit logs."
+          onRetry={load}
+        />
+      ) : logs === null ? (
+        <LoadingState label="Loading audit logs…" />
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          title="No activity yet"
+          description="Admin actions like approving doctors or deactivating accounts will show up here."
+        />
+      ) : (
+        <>
+          <AdminTable
+            columns={columns}
+            rows={paged}
+            rowKey={(l) => l.id}
+          />
+
+          <Pagination
+            page={page}
+            pageSize={PAGE_SIZE}
+            total={filtered.length}
+            onPageChange={setPage}
+          />
+        </>
+      )}
+    </div>
+  </div>
+);
 }
