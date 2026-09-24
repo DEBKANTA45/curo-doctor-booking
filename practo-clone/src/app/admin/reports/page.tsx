@@ -263,11 +263,11 @@ export default function AdminReportsPage() {
     </h1>
       <p className="mt-1 text-sm text-muted">Filter platform data by date, type, and status, then export it.</p>
 
-      <div className="mt-6 inline-flex items-center gap-1 rounded-md border border-line bg-bg p-1">
+      <div className="mt-3 inline-flex items-center gap-1 rounded-md border border-line bg-bg p-1">
         <button
           onClick={() => setCategory("appointments")}
           className={`flex items-center gap-1.5 rounded-[6px] px-3.5 py-1.5 text-sm font-medium transition-colors ${
-            category === "appointments" ? "bg-surface text-primary shadow-card" : "text-muted hover:text-ink"
+            category === "appointments" ? "bg-blue-500 text-white shadow-card" : "text-muted hover:text-ink"
           }`}
         >
           <CalendarCheck2 size={14} /> Appointments
@@ -275,7 +275,7 @@ export default function AdminReportsPage() {
         <button
           onClick={() => setCategory("payments")}
           className={`flex items-center gap-1.5 rounded-[6px] px-3.5 py-1.5 text-sm font-medium transition-colors ${
-            category === "payments" ? "bg-surface text-primary shadow-card" : "text-muted hover:text-ink"
+            category === "payments" ? "bg-blue-500 text-white shadow-card" : "text-muted hover:text-ink"
           }`}
         >
           <IndianRupee size={14} /> Payments
@@ -412,7 +412,7 @@ export default function AdminReportsPage() {
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {summary.map((s) => (
               <div key={s.label} className="card card-hover p-5">
-                <p className="text-xs text-muted">{s.label}</p>
+                <p className="text-xs font-semibold text-muted">{s.label}</p>
                 <p className="mt-1.5 font-tabular text-2xl font-semibold text-ink">{s.value}</p>
               </div>
             ))}
