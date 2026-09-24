@@ -6,54 +6,61 @@ import {
     CalendarCheck2,
     IndianRupee,
     Percent,
-    Stethoscope,
     Users,
+    UserPlus,
     Video,
     MapPin,
     BadgeCheck,
 } from "lucide-react";
 import { getAppointments, getAllDoctors, getAllPatientsForAdmin, AdminPatientView } from "@/lib/mock-db";
 import {
-    appointmentTrend,
-    revenueTrend,
-    registrationTrend,
     consultationTypeSplit,
     appointmentStatusBreakdown,
     paymentStatusBreakdown,
     verificationBreakdown,
 } from "@/lib/admin-reports";
-import MiniBarChart from "@/components/miniBarChart";
+import {
+    DateRangePreset,
+    rangeForPreset,
+    filterAppointmentsByRange,
+    buildBuckets,
+    bucketedAppointmentTrend,
+    bucketedRevenueTrend,
+    bucketedRegistrationTrend,
+} from "@/lib/admin-analytics-filters";
+import { AnimatedBarChart, AnimatedLineChart, AnimatedDonutChart } from "@/components/admin/charts/AnimatedCharts";
 import LoadingState from "@/components/admin/LoadingState";
 import ErrorState from "@/components/admin/ErrorState";
 import type { Appointment, Doctor } from "@/lib/types";
 
-interface BreakdownRow {
-    label: string;
-    count: number;
-    className: string;
-}
+const PRESETS: { key: Exclude<DateRangePreset, "custom">; label: string }[] = [
+    { key: "overall", label: "Overall" },
+    { key: "today", label: "Today" },
+    { key: "last7", label: "Last 7 Days" },
+    { key: "lastMonth", label: "Last Month" },
+    { key: "thisMonth", label: "This Month" },
+    { key: "thisYear", label: "This Year" },
+];
 
 function formatINR(value: number) {
     return `₹${value.toLocaleString("en-IN")}`;
 }
 
-function BreakdownBars({ rows, total }: { rows: BreakdownRow[]; total: number }) {
+function formatDisplay(iso: string) {
+    if (!iso) return "";
+    const d = new Date(`${iso}T00:00:00`);
+    if (Number.isNaN(d.getTime())) return iso;
+    return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function StatCard({ icon: Icon, label, value }: { icon: typeof Users; label: string; value: string | number }) {
     return (
-        <div className="space-y-4">
-            {rows.map((row) => (
-                <div key={row.label}>
-                    <div className="flex items-center justify-between text-xs text-muted">
-                        <span>{row.label}</span>
-                        <span className="font-tabular text-ink">{row.count}</span>
-                    </div>
-                    <div className="mt-1.5 h-2 rounded-full bg-bg">
-                        <div
-                            className={`h-2 rounded-full transition-[width] duration-500 ${row.className}`}
-                            style={{ width: `${total ? (row.count / total) * 100 : 0}%` }}
-                        />
-                    </div>
-                </div>
-            ))}
+        <div className="card card-hover p-5">
+            <span className="icon-tile-soft h-9 w-9">
+                <Icon size={16} />
+            </span>
+            <p className="mt-3 text-xs text-muted">{label}</p>
+            <p className="mt-1 font-tabular text-2xl font-semibold text-ink">{value}</p>
         </div>
     );
 }
@@ -64,6 +71,11 @@ export default function AdminAnalyticsPage() {
     const [patients, setPatients] = useState<AdminPatientView[] | null>(null);
     const [error, setError] = useState(false);
     const [now] = useState(() => new Date());
+
+    const defaultRange = useMemo(() => rangeForPreset("overall"), []);
+    const [preset, setPreset] = useState<DateRangePreset>("overall");
+    const [startDate, setStartDate] = useState(defaultRange.start);
+    const [endDate, setEndDate] = useState(defaultRange.end);
 
     function load() {
         setAppointments(null);
@@ -85,22 +97,80 @@ export default function AdminAnalyticsPage() {
         load();
     }, []);
 
-    const trend = useMemo(() => (appointments ? appointmentTrend(appointments) : []), [appointments]);
-    const revTrend = useMemo(() => (appointments ? revenueTrend(appointments) : []), [appointments]);
+    const applyPreset = (key: Exclude<DateRangePreset, "custom">) => {
+        const range = rangeForPreset(key);
+
+        setPreset(key);
+        setStartDate(range.start);
+        setEndDate(range.end);
+    };
+
+    const clearFilter = () => {
+        applyPreset("overall");
+    };
+    const dateError = startDate && endDate && startDate > endDate ? '"From" date is after "To" date.' : "";
+
+    const filteredAppointments = useMemo(() => {
+        if (!appointments || dateError) return [];
+        return filterAppointmentsByRange(appointments, startDate, endDate);
+    }, [appointments, startDate, endDate, dateError]);
+
+    const { buckets, daily } = useMemo(
+        () => buildBuckets(startDate, endDate),
+        [startDate, endDate]
+    );
+
+    const apptTrend = useMemo(
+        () => bucketedAppointmentTrend(filteredAppointments, buckets, daily),
+        [filteredAppointments, buckets, daily]
+    );
+
+    const revTrend = useMemo(
+        () => bucketedRevenueTrend(filteredAppointments, buckets, daily),
+        [filteredAppointments, buckets, daily]
+    );
+
     const regTrend = useMemo(
-        () => (doctors && patients ? registrationTrend(doctors, patients) : []),
-        [doctors, patients]
+        () =>
+            doctors && patients
+                ? bucketedRegistrationTrend(doctors, patients, buckets, daily)
+                : [],
+        [doctors, patients, buckets, daily]
     );
+
     const typeSplit = useMemo(
-        () => (appointments ? consultationTypeSplit(appointments) : { online: 0, inPerson: 0 }),
-        [appointments]
+        () => consultationTypeSplit(filteredAppointments),
+        [filteredAppointments]
     );
+
     const statusCounts = useMemo(
-        () => (appointments ? appointmentStatusBreakdown(appointments, now) : null),
-        [appointments, now]
+        () => appointmentStatusBreakdown(filteredAppointments, now),
+        [filteredAppointments, now]
     );
-    const payment = useMemo(() => (appointments ? paymentStatusBreakdown(appointments) : null), [appointments]);
-    const verification = useMemo(() => (doctors ? verificationBreakdown(doctors) : null), [doctors]);
+
+    const payment = useMemo(
+        () => paymentStatusBreakdown(filteredAppointments),
+        [filteredAppointments]
+    );
+
+    const verification = useMemo(
+        () => (doctors ? verificationBreakdown(doctors) : null),
+        [doctors]
+    );
+
+
+    //  const { buckets, daily } = useMemo(() => buildBuckets(startDate, endDate), [startDate, endDate]);
+    //     const apptTrend = useMemo(() => bucketedAppointmentTrend(filteredAppointments, buckets, daily), [filteredAppointments, buckets, daily]);
+    //     const revTrend = useMemo(() => bucketedRevenueTrend(filteredAppointments, buckets, daily), [filteredAppointments, buckets, daily]);
+    //     const regTrend = useMemo(
+    //         () => (doctors && patients ? bucketedRegistrationTrend(doctors, patients, buckets, daily) : []),
+    //         [doctors, patients, buckets, daily]
+    //     );
+
+    //     const typeSplit = useMemo(() => consultationTypeSplit(filteredAppointments), [filteredAppointments]);
+    //     const statusCounts = useMemo(() => appointmentStatusBreakdown(filteredAppointments, now), [filteredAppointments, now]);
+    //     const payment = useMemo(() => paymentStatusBreakdown(filteredAppointments), [filteredAppointments]);
+    //     const verification = useMemo(() => (doctors ? verificationBreakdown(doctors) : null), [doctors]);
 
     if (error) {
         return (
@@ -110,7 +180,7 @@ export default function AdminAnalyticsPage() {
         );
     }
 
-    if (!appointments || !doctors || !patients || !statusCounts || !payment || !verification) {
+    if (!appointments || !doctors || !patients || !verification) {
         return (
             <div className="p-5 sm:p-8">
                 <LoadingState label="Loading analytics…" />
@@ -118,155 +188,230 @@ export default function AdminAnalyticsPage() {
         );
     }
 
-    const totalAppointments = appointments.length;
-    const completedCount = appointments.filter((a) => a.status === "completed").length;
-    const cancelledCount = appointments.filter((a) => a.status === "cancelled").length;
+    const totalAppointments = filteredAppointments.length;
+    const completedCount = filteredAppointments.filter((a) => a.status === "completed").length;
+    const cancelledCount = filteredAppointments.filter((a) => a.status === "cancelled").length;
     const completionRate = totalAppointments ? Math.round((completedCount / totalAppointments) * 100) : 0;
     const cancellationRate = totalAppointments ? Math.round((cancelledCount / totalAppointments) * 100) : 0;
-    const typeTotal = typeSplit.online + typeSplit.inPerson;
 
-    const statCards = [
-        { label: "Total appointments", value: totalAppointments, icon: CalendarCheck2 },
-        { label: "Completion rate", value: `${completionRate}%`, icon: Percent },
-        { label: "Cancellation rate", value: `${cancellationRate}%`, icon: Percent },
-        { label: "Revenue collected", value: formatINR(payment.totalPaid), icon: IndianRupee },
-        { label: "Registered doctors", value: doctors.length, icon: Stethoscope },
-        { label: "Registered patients", value: patients.length, icon: Users },
-    ];
+    const newPatientsInRange = patients.filter((p) => {
+        const created = (p as unknown as { createdAt?: string }).createdAt;
 
-    const statusRows: BreakdownRow[] = [
-        { label: "Confirmed", count: statusCounts.confirmed, className: "bg-primary" },
-        { label: "Upcoming", count: statusCounts.upcoming, className: "bg-cyan" },
-        { label: "Completed", count: statusCounts.completed, className: "bg-success" },
-        { label: "Cancelled", count: statusCounts.cancelled, className: "bg-accent" },
-        { label: "Rescheduled", count: statusCounts.rescheduled, className: "bg-faint" },
-    ];
+        if (!created) return false;
 
-    const paymentRows: BreakdownRow[] = [
-        { label: "Paid", count: payment.buckets.paid, className: "bg-success" },
-        { label: "Pending", count: payment.buckets.pending, className: "bg-primary" },
-        { label: "Failed", count: payment.buckets.failed, className: "bg-accent" },
-        { label: "Refunded", count: payment.buckets.refunded, className: "bg-faint" },
-    ];
+        if (preset === "overall") return true;
 
-    const verificationRows: BreakdownRow[] = [
-        { label: "Approved", count: verification.approved, className: "bg-success" },
-        { label: "Pending", count: verification.pending, className: "bg-primary" },
-        { label: "Rejected", count: verification.rejected, className: "bg-accent" },
-    ];
+        const date = created.slice(0, 10);
+        return date >= startDate && date <= endDate;
+    }).length;
+
+    const newDoctorsInRange = doctors.filter((d) => {
+        if (!d.registeredAt) return false;
+
+        if (preset === "overall") return true;
+
+        const date = d.registeredAt.slice(0, 10);
+        return date >= startDate && date <= endDate;
+    }).length;
 
     return (
         <div className="p-5 sm:p-8">
-            <h1 className="font-display text-2xl font-semibold text-ink">
-                Platform insights
-            </h1>
+
+            <h1 className="mt-1.5 font-display text-2xl font-semibold text-ink">Platform insights</h1>
+            {/* Date range controls */}
             <p className="mt-1 text-sm text-muted">
-                Appointments, registrations, payments, and verification at a glance.
+                {preset === "overall"
+                    ? "All available platform data"
+                    : `${formatDisplay(startDate)} — ${formatDisplay(endDate)}`}
             </p>
 
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {statCards.map((s) => (
-                    <div key={s.label} className="card card-hover p-5">
-                        <span className="icon-tile-soft h-9 w-9">
-                            <s.icon size={16} />
-                        </span>
-                        <p className="mt-3 text-xs text-muted">{s.label}</p>
-                        <p className="mt-1 font-tabular text-2xl font-semibold text-ink">{s.value}</p>
-                    </div>
-                ))}
-            </div>
+            <div className="mt-4 space-y-3">
+                {/* Quick filters */}
+                <div className="flex flex-wrap gap-2">
+                    {PRESETS.map((item) => (
+                        <button
+                            key={item.key}
+                            type="button"
+                            onClick={() => applyPreset(item.key)}
+                            className={`rounded-lg border px-3 py-2 text-xs font-medium transition ${preset === item.key
+                                ? "border-primary bg-primary text-white"
+                                : "border-line bg-surface text-muted hover:bg-surface-soft"
+                                }`}
+                        >
+                            {item.label}
+                        </button>
+                    ))}
 
-            <div className="mt-6 grid gap-4 lg:grid-cols-2">
-                <div className="card p-6">
-                    <p className="text-sm font-medium text-ink">Appointments — last 6 months</p>
-                    <div className="mt-5">
-                        <MiniBarChart data={trend} />
-                    </div>
-                </div>
-                <div className="card p-6">
-                    <p className="text-sm font-medium text-ink">Revenue collected — last 6 months</p>
-                    <div className="mt-5">
-                        <MiniBarChart data={revTrend} />
-                    </div>
-                </div>
-            </div>
-
-            <div className="mt-6 grid gap-4 lg:grid-cols-2">
-                <div className="card p-6">
-                    <p className="text-sm font-medium text-ink">Patient registrations — last 6 months</p>
-                    <div className="mt-5">
-                        <MiniBarChart data={regTrend.map((r) => ({ label: r.label, value: r.patients }))} />
-                    </div>
-                </div>
-                <div className="card p-6">
-                    <p className="text-sm font-medium text-ink">Doctor registrations — last 6 months</p>
-                    <div className="mt-5">
-                        <MiniBarChart data={regTrend.map((r) => ({ label: r.label, value: r.doctors }))} />
-                    </div>
-                </div>
-            </div>
-
-            <div className="mt-6 grid gap-4 lg:grid-cols-3">
-                <div className="card p-6">
-                    <p className="text-sm font-medium text-ink">Appointment status</p>
-                    <div className="mt-5">
-                        <BreakdownBars rows={statusRows} total={totalAppointments} />
-                    </div>
+                    <button
+                        type="button"
+                        onClick={clearFilter}
+                        className="rounded-lg border border-line bg-surface px-3 py-2 text-xs font-medium transition hover:bg-surface-soft"
+                    >
+                        Clear Filter
+                    </button>
                 </div>
 
-                <div className="card p-6">
-                    <p className="text-sm font-medium text-ink">Online vs in-person</p>
-                    <div className="mt-5 space-y-4">
+                {/* Date range */}
+                {preset !== "overall" && (
+                    <div className="flex flex-wrap items-end gap-3">
                         <div>
-                            <div className="flex items-center justify-between text-xs text-muted">
-                                <span className="flex items-center gap-1">
-                                    <Video size={12} /> Online
-                                </span>
-                                <span className="font-tabular text-ink">{typeSplit.online}</span>
+                            <label className="mb-1 block text-xs font-medium text-muted">
+                                From
+                            </label>
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => {
+                                    setStartDate(e.target.value);
+                                    setPreset("custom");
+                                }}
+                                className="field"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="mb-1 block text-xs font-medium text-muted">
+                                To
+                            </label>
+                            <input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => {
+                                    setEndDate(e.target.value);
+                                    setPreset("custom");
+                                }}
+                                className="field"
+                            />
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {dateError && <p className="mt-2 text-xs font-medium text-accent">{dateError}</p>}
+
+            {dateError ? (
+                <div className="mt-6">
+                    <ErrorState title="Fix the date range" description="Charts will show once the range is valid." />
+                </div>
+            ) : (
+                <>
+                    {/* Stat cards */}
+                    <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <StatCard icon={CalendarCheck2} label="Appointments in range" value={totalAppointments} />
+                        <StatCard icon={Percent} label="Completion rate" value={`${completionRate}%`} />
+                        <StatCard icon={Percent} label="Cancellation rate" value={`${cancellationRate}%`} />
+                        <StatCard icon={IndianRupee} label="Revenue collected" value={formatINR(payment.totalPaid)} />
+                        <StatCard icon={UserPlus} label="New patients" value={newPatientsInRange} />
+                        <StatCard icon={UserPlus} label="New doctors" value={newDoctorsInRange} />
+                    </div>
+
+                    {/* Line + bar trends */}
+                    <div className="mt-6 grid gap-4 lg:grid-cols-2">
+                        <div className="card p-6">
+                            <p className="text-sm font-medium text-ink">Appointment trend</p>
+                            <p className="mt-0.5 text-xs text-faint">{daily ? "Daily" : "Monthly"} view for the selected range</p>
+                            <div className="mt-5">
+                                <AnimatedLineChart data={apptTrend} colorVar="--color-primary" />
                             </div>
-                            <div className="mt-1.5 h-2 rounded-full bg-bg">
-                                <div
-                                    className="h-2 rounded-full bg-cyan transition-[width] duration-500"
-                                    style={{ width: `${typeTotal ? (typeSplit.online / typeTotal) * 100 : 0}%` }}
+                        </div>
+                        <div className="card p-6">
+                            <p className="text-sm font-medium text-ink">Revenue collected</p>
+                            <p className="mt-0.5 text-xs text-faint">{daily ? "Daily" : "Monthly"} view for the selected range</p>
+                            <div className="mt-5">
+                                <AnimatedBarChart data={revTrend} colorVar="--color-success" valuePrefix="₹" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Registrations */}
+                    <div className="mt-6 grid gap-4 lg:grid-cols-2">
+                        <div className="card p-6">
+                            <p className="text-sm font-medium text-ink">Patient registrations</p>
+                            <div className="mt-5">
+                                <AnimatedBarChart data={regTrend.map((r) => ({ label: r.label, value: r.patients }))} colorVar="--color-cyan" />
+                            </div>
+                        </div>
+                        <div className="card p-6">
+                            <p className="text-sm font-medium text-ink">Doctor registrations</p>
+                            <div className="mt-5">
+                                <AnimatedBarChart data={regTrend.map((r) => ({ label: r.label, value: r.doctors }))} colorVar="--color-success" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Donut charts */}
+                    <div className="mt-6 grid gap-4 lg:grid-cols-2">
+                        <div className="card p-6">
+                            <p className="flex items-center gap-1.5 text-sm font-medium text-ink">
+                                <Video size={14} className="text-cyan-dark" /> Online vs In-person
+                            </p>
+                            <div className="mt-5">
+                                <AnimatedDonutChart
+                                    segments={[
+                                        { label: "Online", value: typeSplit.online, colorVar: "--color-cyan" },
+                                        { label: "In-person", value: typeSplit.inPerson, colorVar: "--color-primary" },
+                                    ]}
+                                    centerLabel="Total"
+                                    centerValue={typeSplit.online + typeSplit.inPerson}
                                 />
                             </div>
                         </div>
-                        <div>
-                            <div className="flex items-center justify-between text-xs text-muted">
-                                <span className="flex items-center gap-1">
-                                    <MapPin size={12} /> In-person
-                                </span>
-                                <span className="font-tabular text-ink">{typeSplit.inPerson}</span>
+
+                        <div className="card p-6">
+                            <p className="text-sm font-medium text-ink">Appointment status</p>
+                            <div className="mt-5">
+                                <AnimatedDonutChart
+                                    segments={[
+                                        { label: "Confirmed", value: statusCounts.confirmed, colorVar: "--color-primary" },
+                                        { label: "Upcoming", value: statusCounts.upcoming, colorVar: "--color-cyan" },
+                                        { label: "Completed", value: statusCounts.completed, colorVar: "--color-success" },
+                                        { label: "Cancelled", value: statusCounts.cancelled, colorVar: "--color-accent" },
+                                        { label: "Rescheduled", value: statusCounts.rescheduled, colorVar: "--color-faint" },
+                                    ]}
+                                    centerLabel="Total"
+                                    centerValue={totalAppointments}
+                                />
                             </div>
-                            <div className="mt-1.5 h-2 rounded-full bg-bg">
-                                <div
-                                    className="h-2 rounded-full bg-primary transition-[width] duration-500"
-                                    style={{ width: `${typeTotal ? (typeSplit.inPerson / typeTotal) * 100 : 0}%` }}
+                        </div>
+
+                        <div className="card p-6">
+                            <p className="flex items-center gap-1.5 text-sm font-medium text-ink">
+                                <BadgeCheck size={14} className="text-primary" /> Doctor verification
+                            </p>
+                            <p className="mt-0.5 text-xs text-faint">Current status — not affected by the date range</p>
+                            <div className="mt-5">
+                                <AnimatedDonutChart
+                                    segments={[
+                                        { label: "Approved", value: verification.approved, colorVar: "--color-success" },
+                                        { label: "Pending", value: verification.pending, colorVar: "--color-primary" },
+                                        { label: "Rejected", value: verification.rejected, colorVar: "--color-accent" },
+                                    ]}
+                                    centerLabel="Doctors"
+                                    centerValue={doctors.length}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="card p-6">
+                            <p className="flex items-center gap-1.5 text-sm font-medium text-ink">
+                                <MapPin size={14} className="text-cyan-dark" /> Payment status
+                            </p>
+                            <div className="mt-5">
+                                <AnimatedDonutChart
+                                    segments={[
+                                        { label: "Paid", value: payment.buckets.paid, colorVar: "--color-success" },
+                                        { label: "Pending", value: payment.buckets.pending, colorVar: "--color-primary" },
+                                        { label: "Failed", value: payment.buckets.failed, colorVar: "--color-accent" },
+                                        { label: "Refunded", value: payment.buckets.refunded, colorVar: "--color-faint" },
+                                    ]}
+                                    centerLabel="Collected"
+                                    centerValue={formatINR(payment.totalPaid)}
                                 />
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <div className="card p-6">
-                    <p className="flex items-center gap-1.5 text-sm font-medium text-ink">
-                        <BadgeCheck size={15} className="text-primary" /> Doctor verification
-                    </p>
-                    <div className="mt-5">
-                        <BreakdownBars rows={verificationRows} total={doctors.length} />
-                    </div>
-                </div>
-            </div>
-
-            <div className="mt-6 card p-6">
-                <p className="text-sm font-medium text-ink">Payment status</p>
-                <p className="mt-1 text-xs text-muted">
-                    {formatINR(payment.totalPaid)} collected across {payment.buckets.paid} paid transactions
-                </p>
-                <div className="mt-5">
-                    <BreakdownBars rows={paymentRows} total={totalAppointments} />
-                </div>
-            </div>
+                </>
+            )}
         </div>
     );
 }
