@@ -21,6 +21,7 @@ import DocumentPreviewCard from "@/components/admin/DocumentPreviewCard";
 import LoadingState from "@/components/admin/LoadingState";
 import EmptyState from "@/components/admin/EmptyState";
 import ErrorState from "@/components/admin/ErrorState";
+import { useAdminAuth } from "@/context/AdminAuthContext";
 
 const PAGE_SIZE = 8;
 
@@ -30,7 +31,9 @@ const STATUS_FILTER_OPTIONS = [
   { label: "Rejected", value: "rejected" },
 ];
 
+
 function verificationLabel(status?: string) {
+
   if (status === "approved") return "Approved";
   if (status === "rejected") return "Rejected";
   return "Pending";
@@ -44,6 +47,8 @@ function formatDate(iso?: string) {
 }
 
 export default function AdminDoctorVerificationPage() {
+const { can } = useAdminAuth();
+const canApprove = can("doctor-verification", "approve");
   const [doctors, setDoctors] = useState<Doctor[] | null>(null);
   const [error, setError] = useState(false);
 
@@ -270,25 +275,31 @@ export default function AdminDoctorVerificationPage() {
               </div>
             </div>
 
-            <div className="mt-5 flex justify-end gap-2 border-t border-line pt-5">
-              <button
-                onClick={() => {
-                  setRejectTarget(reviewDoctor);
-                  setRejectionReason("");
-                }}
-                className="btn-danger btn-sm flex items-center gap-1.5"
-              >
-                <XCircle size={14} />
-                Reject
-              </button>
-              <button
-                onClick={() => setApproveTarget(reviewDoctor)}
-                className="btn-primary btn-sm flex items-center gap-1.5"
-              >
-                <CheckCircle2 size={14} />
-                Approve
-              </button>
-            </div>
+ {canApprove ? (
+  <div className="mt-5 flex justify-end gap-2 border-t border-line pt-5">
+    <button
+      onClick={() => {
+        setRejectTarget(reviewDoctor);
+        setRejectionReason("");
+      }}
+      className="btn-danger btn-sm flex items-center gap-1.5"
+    >
+      <XCircle size={14} />
+      Reject
+    </button>
+    <button
+      onClick={() => setApproveTarget(reviewDoctor)}
+      className="btn-primary btn-sm flex items-center gap-1.5"
+    >
+      <CheckCircle2 size={14} />
+      Approve
+    </button>
+  </div>
+) : (
+  <p className="mt-5 border-t border-line pt-5 text-xs text-muted">
+    You have view-only access — approving or rejecting needs the Approve / Reject permission.
+  </p>
+)}
           </div>
         )}
       </AdminModal>

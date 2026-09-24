@@ -12,6 +12,9 @@ import ConfirmActionModal from "@/components/admin/ConfirmActionModal";
 import LoadingState from "@/components/admin/LoadingState";
 import EmptyState from "@/components/admin/EmptyState";
 import ErrorState from "@/components/admin/ErrorState";
+import { useAdminAuth } from "@/context/AdminAuthContext";
+
+
 
 const PAGE_SIZE = 8;
 
@@ -31,6 +34,8 @@ function Stars({ rating }: { rating: number }) {
 }
 
 export default function AdminReviewsPage() {
+const { can } = useAdminAuth();
+const canEdit = can("reviews", "edit");
   const [reviews, setReviews] = useState<AdminReviewView[] | null>(null);
   const [error, setError] = useState(false);
 
@@ -154,17 +159,19 @@ export default function AdminReviewsPage() {
           >
             View
           </button>
-          <button
-            onClick={() => setConfirmTarget(r)}
-            className={`flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors ${
-              r.hidden
-                ? "border-success/40 text-success hover:bg-success-light"
-                : "border-accent/40 text-accent hover:bg-accent-light"
-            }`}
-          >
-            {r.hidden ? <Eye size={12} /> : <EyeOff size={12} />}
-            {r.hidden ? "Unhide" : "Hide"}
-          </button>
+         {canEdit && (
+  <button
+    onClick={() => setConfirmTarget(r)}
+    className={`flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors ${
+      r.hidden
+        ? "border-success/40 text-success hover:bg-success-light"
+        : "border-accent/40 text-accent hover:bg-accent-light"
+    }`}
+  >
+    {r.hidden ? <Eye size={12} /> : <EyeOff size={12} />}
+    {r.hidden ? "Unhide" : "Hide"}
+  </button>
+)}
         </div>
       ),
     },
@@ -254,17 +261,19 @@ export default function AdminReviewsPage() {
             )}
 
             <div className="mt-5 flex justify-end border-t border-line pt-5">
-              <button
-                onClick={() => setConfirmTarget(viewReview)}
-                className={`btn-sm flex items-center gap-1.5 rounded-md border font-medium transition-colors ${
-                  viewReview.hidden
-                    ? "border-success/40 text-success hover:bg-success-light"
-                    : "border-accent/40 text-accent hover:bg-accent-light"
-                }`}
-              >
-                {viewReview.hidden ? <Eye size={13} /> : <EyeOff size={13} />}
-                {viewReview.hidden ? "Unhide review" : "Hide review"}
-              </button>
+              {canEdit && (
+  <button
+    onClick={() => setConfirmTarget(viewReview)}
+    className={`btn-sm flex items-center gap-1.5 rounded-md border font-medium transition-colors ${
+      viewReview.hidden
+        ? "border-success/40 text-success hover:bg-success-light"
+        : "border-accent/40 text-accent hover:bg-accent-light"
+    }`}
+  >
+    {viewReview.hidden ? <Eye size={13} /> : <EyeOff size={13} />}
+    {viewReview.hidden ? "Unhide review" : "Hide review"}
+  </button>
+)}
             </div>
           </div>
         )}

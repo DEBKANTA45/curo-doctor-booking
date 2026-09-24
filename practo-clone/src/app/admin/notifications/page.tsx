@@ -16,6 +16,9 @@ import ConfirmActionModal from "@/components/admin/ConfirmActionModal";
 import LoadingState from "@/components/admin/LoadingState";
 import EmptyState from "@/components/admin/EmptyState";
 import ErrorState from "@/components/admin/ErrorState";
+import { useAdminAuth } from "@/context/AdminAuthContext";
+
+
 
 const AUDIENCE_OPTIONS: { value: NotificationAudience; label: string; icon: typeof Users }[] = [
   { value: "all-patients", label: "All Patients", icon: Users },
@@ -36,6 +39,8 @@ function formatDate(iso: string) {
 }
 
 export default function AdminNotificationsPage() {
+const { can } = useAdminAuth();
+const canCreate = can("notifications", "create");
   const [accounts, setAccounts] = useState<Account[] | null>(null);
   const [history, setHistory] = useState<AdminNotificationBroadcast[] | null>(null);
   const [error, setError] = useState(false);
@@ -123,6 +128,7 @@ export default function AdminNotificationsPage() {
       ) : (
         <>
           {/* Compose card */}
+          {canCreate && (
           <div className="card mt-6 p-5">
             <p className="text-sm font-medium text-ink">Send a notification</p>
 
@@ -146,6 +152,7 @@ export default function AdminNotificationsPage() {
                 );
               })}
             </div>
+          
 
             {audience === "selected" && (
               <div className="mt-3 max-h-48 space-y-1 overflow-y-auto rounded-lg border border-line p-2">
@@ -196,6 +203,7 @@ export default function AdminNotificationsPage() {
 
             {sentNotice && <p className="mt-2 text-xs font-medium text-success">{sentNotice}</p>}
           </div>
+             )}
 
           {/* History */}
           <div className="mt-8">

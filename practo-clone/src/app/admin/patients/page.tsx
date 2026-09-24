@@ -14,6 +14,9 @@ import ConfirmActionModal from "@/components/admin/ConfirmActionModal";
 import LoadingState from "@/components/admin/LoadingState";
 import EmptyState from "@/components/admin/EmptyState";
 import ErrorState from "@/components/admin/ErrorState";
+import { useAdminAuth } from "@/context/AdminAuthContext";
+
+
 
 const PAGE_SIZE = 8;
 
@@ -25,6 +28,8 @@ function formatDate(iso?: string | null) {
 }
 
 export default function AdminPatientsPage() {
+const { can } = useAdminAuth();
+const canEdit = can("patients", "edit");
   const [patients, setPatients] = useState<AdminPatientView[] | null>(null);
   const [error, setError] = useState(false);
 
@@ -142,17 +147,19 @@ export default function AdminPatientsPage() {
           >
             View
           </button>
-          <button
-            onClick={() => setConfirmTarget(p)}
-            className={`flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors ${
-              !p.active
-                ? "border-success/40 text-success hover:bg-success-light"
-                : "border-accent/40 text-accent hover:bg-accent-light"
-            }`}
-          >
-            <Power size={12} />
-            {!p.active ? "Activate" : "Deactivate"}
-          </button>
+         {canEdit && (
+  <button
+    onClick={() => setConfirmTarget(p)}
+    className={`flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors ${
+      !p.active
+        ? "border-success/40 text-success hover:bg-success-light"
+        : "border-accent/40 text-accent hover:bg-accent-light"
+    }`}
+  >
+    <Power size={12} />
+    {!p.active ? "Activate" : "Deactivate"}
+  </button>
+)}
         </div>
       ),
     },
@@ -244,17 +251,19 @@ export default function AdminPatientsPage() {
             </div>
 
             <div className="mt-5 flex justify-end border-t border-line pt-5">
-              <button
-                onClick={() => setConfirmTarget(viewPatient)}
-                className={`btn-sm flex items-center gap-1.5 rounded-md border font-medium transition-colors ${
-                  !viewPatient.active
-                    ? "border-success/40 text-success hover:bg-success-light"
-                    : "border-accent/40 text-accent hover:bg-accent-light"
-                }`}
-              >
-                <Power size={13} />
-                {!viewPatient.active ? "Activate patient" : "Deactivate patient"}
-              </button>
+             {canEdit && (
+  <button
+    onClick={() => setConfirmTarget(viewPatient)}
+    className={`btn-sm flex items-center gap-1.5 rounded-md border font-medium transition-colors ${
+      !viewPatient.active
+        ? "border-success/40 text-success hover:bg-success-light"
+        : "border-accent/40 text-accent hover:bg-accent-light"
+    }`}
+  >
+    <Power size={13} />
+    {!viewPatient.active ? "Activate patient" : "Deactivate patient"}
+  </button>
+)}
             </div>
           </div>
         )}

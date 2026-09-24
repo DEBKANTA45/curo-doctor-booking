@@ -24,10 +24,9 @@ import ConfirmActionModal from "@/components/admin/ConfirmActionModal";
 import LoadingState from "@/components/admin/LoadingState";
 import EmptyState from "@/components/admin/EmptyState";
 import ErrorState from "@/components/admin/ErrorState";
-// import { useAdminAuth } from "@/context/AdminAuthContext";
+import { useAdminAuth } from "@/context/AdminAuthContext";
 
-// const { can } = useAdminAuth();
-// const canEdit = can("doctors", "edit");
+
 const PAGE_SIZE = 8;
 
 type SortKey = "name" | "experienceYears" | "consultationFee";
@@ -45,6 +44,8 @@ function verificationLabel(status?: string) {
 }
 
 export default function AdminDoctorsPage() {
+const { can } = useAdminAuth();
+const canEdit = can("doctors", "edit");
   const [doctors, setDoctors] = useState<Doctor[] | null>(null);
   const [error, setError] = useState(false);
 
@@ -191,17 +192,19 @@ export default function AdminDoctorsPage() {
           >
             View
           </button>
-          <button
-            onClick={() => setConfirmTarget(d)}
-            className={`flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors ${
-              d.active === false
-                ? "border-success/40 text-success hover:bg-success-light"
-                : "border-accent/40 text-accent hover:bg-accent-light"
-            }`}
-          >
-            <Power size={12} />
-            {d.active === false ? "Activate" : "Deactivate"}
-          </button>
+          {canEdit && (
+  <button
+    onClick={() => setConfirmTarget(d)}
+    className={`flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors ${
+      d.active === false
+        ? "border-success/40 text-success hover:bg-success-light"
+        : "border-accent/40 text-accent hover:bg-accent-light"
+    }`}
+  >
+    <Power size={12} />
+    {d.active === false ? "Activate" : "Deactivate"}
+  </button>
+)}
         </div>
       ),
     },
@@ -347,17 +350,19 @@ export default function AdminDoctorsPage() {
               >
                 Go to verification review <ArrowRight size={12} />
               </Link>
-              <button
-                onClick={() => setConfirmTarget(viewDoctor)}
-                className={`btn-sm flex items-center gap-1.5 rounded-md border font-medium transition-colors ${
-                  viewDoctor.active === false
-                    ? "border-success/40 text-success hover:bg-success-light"
-                    : "border-accent/40 text-accent hover:bg-accent-light"
-                }`}
-              >
-                <Power size={13} />
-                {viewDoctor.active === false ? "Activate doctor" : "Deactivate doctor"}
-              </button>
+             {canEdit && (
+  <button
+    onClick={() => setConfirmTarget(viewDoctor)}
+    className={`btn-sm flex items-center gap-1.5 rounded-md border font-medium transition-colors ${
+      viewDoctor.active === false
+        ? "border-success/40 text-success hover:bg-success-light"
+        : "border-accent/40 text-accent hover:bg-accent-light"
+    }`}
+  >
+    <Power size={13} />
+    {viewDoctor.active === false ? "Activate doctor" : "Deactivate doctor"}
+  </button>
+)}
             </div>
           </div>
         )}

@@ -34,6 +34,9 @@ import StatusBadge from "@/components/admin/StatusBadge";
 import LoadingState from "@/components/admin/LoadingState";
 import EmptyState from "@/components/admin/EmptyState";
 import ErrorState from "@/components/admin/ErrorState";
+import { useAdminAuth } from "@/context/AdminAuthContext";
+
+
 
 const PAGE_SIZE = 8;
 
@@ -91,6 +94,8 @@ const QUICK_RANGES: { label: string; getStart: () => string }[] = [
 ];
 
 export default function AdminReportsPage() {
+const { can } = useAdminAuth();
+const canExport = can("reports", "create");
   const [appointments, setAppointments] = useState<Appointment[] | null>(null);
   const [error, setError] = useState(false);
   const [now] = useState(() => new Date());
@@ -425,21 +430,24 @@ export default function AdminReportsPage() {
             <div className="flex gap-2">
               <button
                 onClick={handleExportCsv}
-                disabled={sorted.length === 0}
+                disabled={sorted.length === 0 || !canExport}
+                title={!canExport ? "You don't have permission to export reports" : undefined}
                 className="btn-secondary btn-sm flex items-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Download size={13} /> CSV
               </button>
               <button
                 onClick={handleExportExcel}
-                disabled={sorted.length === 0}
+                disabled={sorted.length === 0 || !canExport}
+                title={!canExport ? "You don't have permission to export reports" : undefined}
                 className="btn-secondary btn-sm flex items-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <FileSpreadsheet size={13} /> Excel
               </button>
               <button
                 onClick={handleExportPdf}
-                disabled={sorted.length === 0}
+                disabled={sorted.length === 0 || !canExport}
+                title={!canExport ? "You don't have permission to export reports" : undefined}
                 className="btn-secondary btn-sm flex items-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <FileTextIcon size={13} /> PDF
