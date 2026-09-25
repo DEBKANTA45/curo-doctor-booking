@@ -76,7 +76,7 @@ export default function HomePage() {
         <div className="relative mx-auto grid max-w-content gap-10 px-5 py-14 sm:py-20 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:py-24">
           <div>
             <span className="section-eyebrow inline-flex items-center gap-1.5 rounded-full bg-primary-light px-3 py-1.5">
-              <Sparkles size={13} /> Trusted by patients across India
+              <Sparkles size={13} /> Trusted platform
             </span>
             <h1 className="mt-4 font-display text-4xl font-semibold leading-[1.1] tracking-tight text-ink sm:text-5xl">
               Book a doctor you trust,{" "}
@@ -91,8 +91,7 @@ export default function HomePage() {
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Link
                 href={isDoctor ? "/doctor/dashboard" : "/doctors"}
-                className="btn-primary btn-lg"
-              >
+                className="btn-secondary btn-lg">
                 {isDoctor ? "Open dashboard" : "Find a doctor"} <ArrowRight size={16} />
               </Link>
               <Link
@@ -102,10 +101,10 @@ export default function HomePage() {
                 {isDoctor ? "Manage schedule" : isPatient ? "My appointments" : "List your practice"}
               </Link>
             </div>
-            <div className="mt-8">
+            <div className="mt-5">
               <HomeSearch />
             </div>
-            <p className="mt-4 flex items-center gap-1.5 text-sm text-faint">
+            <p className="mt-4 flex items-center gap-1.5 text-sm font-medium text-muted">
               <ShieldCheck size={14} className="text-cyan-dark" />
               {doctors.length} doctors across {new Set(doctors.map((d) => d.city)).size} cities
             </p>
@@ -188,7 +187,7 @@ export default function HomePage() {
               View all <ArrowRight size={14} />
             </Link>
           </div>
-                    <div className="mt-6 flex flex-col gap-4">
+          <div className="mt-6 flex flex-col gap-4">
             {topDoctors.map((doctor) => (
               <DoctorCard key={doctor.id} doctor={doctor} />
             ))}
@@ -278,7 +277,7 @@ export default function HomePage() {
           </div>
           <Link
             href="/doctor/register"
-            className="relative shrink-0 rounded-md bg-white px-5 py-2.5 text-sm font-semibold text-primary-dark shadow-sm transition-transform duration-150 ease-out hover:-translate-y-0.5 active:scale-[0.97]"
+            className="btn btn-md relative shrink-0 bg-white text-primary-dark shadow-sm hover:-translate-y-0.5"
           >
             Join as a doctor
           </Link>

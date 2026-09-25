@@ -8,9 +8,9 @@ import toast from "react-hot-toast";
 
 // One seeded account per role, so every permission level can be tried out.
 const DEMO_ACCOUNTS = [
-  { role: "Super Admin", email: "admin@curo.com", password: "admin@7898" },
-  { role: "Admin", email: "manager@curo.com", password: "manager@123" },
-  { role: "Support", email: "support@curo.com", password: "support@123" },
+  { role: "Super Admin", email: "admin@curo.com", password: "admin@curo1" },
+  { role: "Admin", email: "manager@curo.com", password: "manager@curo2" },
+  { role: "Support", email: "support@curo.com", password: "support@curo3" },
 ];
 
 export default function AdminLoginPage() {

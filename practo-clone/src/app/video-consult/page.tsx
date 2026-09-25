@@ -231,7 +231,7 @@ export default function VideoConsultPage() {
             </h2>
           </div>
         </div>
-        <div className="mt-6 grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-5">
+       <div className="mt-6 grid grid-cols-2 gap-x-5 gap-y-3.5 sm:grid-cols-3 lg:grid-cols-5">
           {specialties.map((s) => {
             const Icon = getSpecialtyIcon(s.icon);
             return (
@@ -267,7 +267,7 @@ export default function VideoConsultPage() {
               type="button"
               onClick={() => scrollConcerns("left")}
               aria-label="Scroll left"
-              className="absolute left-0 top-1/2 z-10 hidden h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-line bg-surface text-muted shadow-soft transition-colors hover:border-primary/40 hover:bg-primary-light hover:text-primary-dark sm:flex"
+              className="absolute left-1 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-line bg-surface text-muted shadow-soft transition-colors hover:border-primary/40 hover:bg-primary-light hover:text-primary-dark sm:flex"
             >
               <ChevronLeft size={16} />
             </button>
@@ -275,7 +275,7 @@ export default function VideoConsultPage() {
               type="button"
               onClick={() => scrollConcerns("right")}
               aria-label="Scroll right"
-              className="absolute right-0 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border border-line bg-surface text-muted shadow-soft transition-colors hover:border-primary/40 hover:bg-primary-light hover:text-primary-dark sm:flex"
+              className="absolute right-1 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-line bg-surface text-muted shadow-soft transition-colors hover:border-primary/40 hover:bg-primary-light hover:text-primary-dark sm:flex"
             >
               <ChevronRight size={16} />
             </button>
@@ -289,7 +289,7 @@ export default function VideoConsultPage() {
                 return (
                   <div
                     key={c.question}
-                    className="card card-hover flex w-52 shrink-0 snap-start flex-col overflow-hidden sm:w-56"
+                    className="card card-hover flex w-52 shrink-0 snap-start flex-col overflow-hidden sm:w-[calc((100%-48px)/4)]"
                   >
                     <div className={`flex h-28 w-full items-center justify-center ${tone.bg}`}>
                       <c.Illustration className={`h-20 w-28 ${tone.icon}`} />
@@ -321,7 +321,7 @@ export default function VideoConsultPage() {
           </div>
           <Link
             href="/doctors?type=video"
-            className="flex items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-primary-dark"
+            className="flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-sm font-semibold text-primary transition-colors hover:border-primary/40 hover:bg-primary-light hover:text-primary-dark"
           >
             View all <ArrowRight size={14} />
           </Link>
@@ -373,7 +373,7 @@ export default function VideoConsultPage() {
               <span className="icon-tile-soft">
                 <b.icon size={18} />
               </span>
-              <h3 className="mt-4 text-sm font-semibold text-ink">{b.title}</h3>
+             <h3 className="mt-4 min-h-[2.5rem] text-sm font-semibold text-ink">{b.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted">{b.description}</p>
             </div>
           ))}
@@ -386,7 +386,7 @@ export default function VideoConsultPage() {
         <h2 className="mt-1.5 font-display text-2xl font-semibold text-ink sm:text-3xl">What users are saying</h2>
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {userReviews.map((r) => (
-            <div key={r.id} className="card p-5">
+            <div key={r.id} className="card flex flex-col p-5">
               <div className="flex items-center gap-1 text-accent">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star key={i} size={13} fill={i < r.rating ? "currentColor" : "none"} className="text-accent" />
@@ -400,7 +400,7 @@ export default function VideoConsultPage() {
                 <div className="min-w-0">
                   <p className="truncate text-xs font-medium text-ink">{r.author}</p>
                   {r.doctorName && (
-                    <p className="truncate text-[11px] text-faint">
+                    <p className="truncate text-xs text-faint">
                       Consulted {r.doctorName} &middot; {r.doctorSpecialty}
                     </p>
                   )}

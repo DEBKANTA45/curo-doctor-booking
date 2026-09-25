@@ -856,3 +856,83 @@ export function logAdminAction(action: string, entityType: AuditEntityType, enti
 export function getAuditLogs(): AuditLogEntry[] {
   return read<AuditLogEntry[]>(AUDIT_LOGS_KEY, []).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
+
+// ---------- Demo accounts (auto-seeded once per browser, so the deployed
+// app always has working demo logins for anyone who opens it — no manual
+// registration step needed before login) ----------
+
+export const DEMO_PATIENT_EMAIL = "demo.patient@curo.com";
+export const DEMO_PATIENT_PASSWORD = "demo.patient@curo.com";
+export const DEMO_DOCTOR_EMAIL = "demo.doctor@curo.com";
+export const DEMO_DOCTOR_PASSWORD = "demo.doctor@curo.com";
+
+const DEMO_SEED_FLAG_KEY = "curo_demo_seeded";
+
+export function seedDemoAccounts() {
+  if (typeof window === "undefined") return;
+  if (window.localStorage.getItem(DEMO_SEED_FLAG_KEY) === "true") return;
+
+  const accounts = getAccounts();
+  let doctorId = "";
+
+  if (!findAccountByEmail(DEMO_DOCTOR_EMAIL)) {
+    doctorId = "custom_demo_doctor";
+    const demoDoctor: Doctor = {
+      id: doctorId,
+      slug: "dr-demo-doctor",
+      name: "Dr. Demo Doctor",
+      gender: "male",
+      specialtyId: "general-physician",
+      specialty: "General Physician",
+      qualifications: "MBBS, MD - Internal Medicine",
+      experienceYears: 10,
+      rating: 4.8,
+      reviewCount: 24,
+      consultationFee: 500,
+      clinicName: "Curo Demo Clinic",
+      locality: "Demo Layout",
+      city: "Bengaluru",
+      languages: ["English", "Hindi"],
+      about:
+        "This is a demo doctor account set up for reviewers to test the booking and consultation flow end-to-end.",
+      photo: "https://i.pravatar.cc/300?u=demo-doctor",
+      verified: true,
+      nextAvailable: "Today",
+      availableDays: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+      slots: ["10:00 AM", "10:30 AM", "11:00 AM", "04:00 PM", "04:30 PM", "05:00 PM"],
+      active: true,
+      verificationStatus: "approved",
+      registeredAt: new Date().toISOString(),
+    };
+    const customDoctors = getCustomDoctors();
+    customDoctors.push(demoDoctor);
+    write(CUSTOM_DOCTORS_KEY, customDoctors);
+
+    const doctorAccount: DoctorAccount = {
+      id: "dr_demo",
+      role: "doctor",
+      name: demoDoctor.name,
+      email: DEMO_DOCTOR_EMAIL,
+      password: DEMO_DOCTOR_PASSWORD,
+      specialty: demoDoctor.specialty,
+      doctorId,
+    };
+    accounts.push(doctorAccount);
+  }
+
+  if (!findAccountByEmail(DEMO_PATIENT_EMAIL)) {
+    const patientAccount: PatientAccount = {
+      id: "p_demo",
+      role: "patient",
+      name: "Demo Patient",
+      email: DEMO_PATIENT_EMAIL,
+      password: DEMO_PATIENT_PASSWORD,
+      phone: "9876543210",
+      createdAt: new Date().toISOString(),
+    };
+    accounts.push(patientAccount);
+  }
+
+  write(ACCOUNTS_KEY, accounts);
+  window.localStorage.setItem(DEMO_SEED_FLAG_KEY, "true");
+}

@@ -35,45 +35,45 @@ export default function DoctorLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="mx-auto flex max-w-[1440px]">
-      <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-60 shrink-0 flex-col border-r border-line bg-surface md:flex">
-        <nav className="flex-1 space-y-1 overflow-y-auto p-4">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-primary-light text-primary-dark"
-                    : "text-muted hover:bg-bg hover:text-ink"
-                }`}
-              >
-                <item.icon size={17} />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
+  <div className="flex">
+    <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-60 shrink-0 flex-col border-r border-line bg-surface md:flex">
+      <nav className="flex-1 space-y-1 overflow-y-auto p-4">
+        {navItems.map((item) => {
+          const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
+                isActive
+                  ? "bg-primary-light text-primary-dark"
+                  : "text-muted hover:bg-bg hover:text-ink"
+              }`}
+            >
+              <item.icon size={17} />
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
 
-        <Link
-          href="/doctor/profile"
-          className={`flex shrink-0 items-center gap-3 border-t border-line p-4 transition-colors hover:bg-bg ${
-            pathname === "/doctor/profile" ? "bg-primary-light" : ""
-          }`}
-        >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-xs font-medium text-white">
-            {account.name.charAt(0).toUpperCase()}
-          </span>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-ink">{account.name}</p>
-            <p className="truncate text-xs text-muted">{account.specialty}</p>
-          </div>
-        </Link>
-      </aside>
+      <Link
+        href="/doctor/profile"
+        className={`flex shrink-0 items-center gap-3 border-t border-line p-4 transition-colors hover:bg-bg ${
+          pathname === "/doctor/profile" ? "bg-primary-light" : ""
+        }`}
+      >
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-xs font-medium text-white">
+          {account.name.charAt(0).toUpperCase()}
+        </span>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-ink">{account.name}</p>
+          <p className="truncate text-xs text-muted">{account.specialty}</p>
+        </div>
+      </Link>
+    </aside>
 
-      <div className="min-w-0 flex-1">{children}</div>
-    </div>
-  );
+    <div className="min-w-0 flex-1">{children}</div>
+  </div>
+);
 }

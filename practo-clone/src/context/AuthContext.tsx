@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect } from "react";
 import { Account } from "@/lib/types";
-import { getSession, logout as logoutDb } from "@/lib/mock-db";
+import { getSession, logout as logoutDb, seedDemoAccounts } from "@/lib/mock-db";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { setAccount, setLoading } from "@/store/authSlice";
 
@@ -39,6 +39,7 @@ export function AuthHydrator() {
   const dispatch = useAppDispatch();
 
   useEffect(() => {
+    seedDemoAccounts();
     dispatch(setAccount(getSession()));
     dispatch(setLoading(false));
   }, [dispatch]);

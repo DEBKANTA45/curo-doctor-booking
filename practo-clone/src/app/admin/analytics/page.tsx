@@ -216,14 +216,16 @@ export default function AdminAnalyticsPage() {
 
     return (
         <div className="p-5 sm:p-8">
-
+         <div className="sticky top-0 z-30 -mx-5 bg-bg px-5 pb-1 sm:-mx-8 sm:px-8">
             <h1 className="mt-1.5 font-display text-2xl font-semibold text-ink">Platform insights</h1>
             {/* Date range controls */}
+            
             <p className="mt-1 text-sm text-muted">
                 {preset === "overall"
                     ? "All available platform data"
                     : `${formatDisplay(startDate)} — ${formatDisplay(endDate)}`}
             </p>
+            
 
             <div className="mt-4 space-y-3">
                 {/* Quick filters */}
@@ -286,8 +288,11 @@ export default function AdminAnalyticsPage() {
                     </div>
                 )}
             </div>
-
-            {dateError && <p className="mt-2 text-xs font-medium text-accent">{dateError}</p>}
+           </div>
+ 
+            {dateError && <p className="mt-2 text-xs font-medium text-accent">
+                {dateError}
+                </p>}
 
             {dateError ? (
                 <div className="mt-6">
