@@ -1,5 +1,5 @@
 "use client";
-
+import { Suspense } from "react";
 import Link from "next/link";
 import { ArrowRight, CalendarCheck, ClipboardList, Search, ShieldCheck, Sparkles, Star, Quote, Users, MapPin } from "lucide-react";
 import HomeSearch from "@/components/HomeSearch";
@@ -188,9 +188,11 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="mt-6 flex flex-col gap-4">
-            {topDoctors.map((doctor) => (
-              <DoctorCard key={doctor.id} doctor={doctor} />
-            ))}
+            <Suspense fallback={null}>
+              {topDoctors.map((doctor) => (
+                <DoctorCard key={doctor.id} doctor={doctor} />
+              ))}
+            </Suspense>
           </div>
         </div>
       </section>
